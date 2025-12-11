@@ -1,0 +1,86 @@
+name: inner_circle
+description: "Peer-support app skeleton"
+version: 0.1.0
+
+environment:
+  sdk: ">=2.18.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI
+  cupertino_icons: ^1.0.2
+  flutter_svg: ^2.0.0
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Routing
+  go_router: ^17.0.0
+
+  # Firebase
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.16.2
+  cloud_firestore: ^4.11.0
+  firebase_storage: ^11.7.7
+  firebase_analytics: ^10.10.7
+  firebase_crashlytics: ^3.5.7
+  firebase_performance: ^0.9.4+7
+
+  # OAuth
+  google_sign_in: ^7.2.0
+
+  # Networking
+  dio: ^5.4.3+1
+  http: ^1.1.0
+
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Functional Programming
+  dartz: ^0.10.1
+
+  # Image Handling
+  image_picker: ^1.0.7
+  flutter_image_compress: ^2.2.0
+  cached_network_image: ^3.3.1
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.4.0
+  equatable: ^2.0.5
+  encrypt: ^5.0.3
+  crypto: ^3.0.3
+  url_launcher: ^6.2.5
+  google_fonts: ^6.1.0
+
+  # Connectivity
+  connectivity_plus: ^5.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  # Testing
+  mocktail: ^1.0.3
+
+  # Code Generation
+  riverpod_generator: ^2.4.0
+  build_runner: ^2.4.9
+  hive_generator: ^2.0.1
+
+  # Linting
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+

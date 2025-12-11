@@ -1,0 +1,237 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../community/presentation/providers/community_providers.dart';
+
+/// Admin dashboard page
+class AdminDashboardPage extends ConsumerWidget {
+  const AdminDashboardPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final communityState = ref.watch(communityControllerProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Dashboard'),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              ref.read(authControllerProvider.notifier).logout();
+            },
+            icon: const Icon(Icons.logout, color: Colors.white),
+            label: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      drawer: _AdminDrawer(),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Willkommen, ${user?.email ?? 'Admin'}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 32),
+
+            // Stats cards
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _StatCard(
+                  title: 'Communities',
+                  count: communityState.communities.length,
+                  icon: Icons.group,
+                  color: Colors.blue,
+                  onTap: () => context.go('/admin/communities'),
+                ),
+                _StatCard(
+                  title: 'Foren',
+                  count: 0, // Will be calculated from all communities
+                  icon: Icons.forum,
+                  color: Colors.green,
+                  onTap: () => context.go('/admin/forums'),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+
+            // Quick actions
+            Text(
+              'Schnellzugriff',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _QuickActionButton(
+                  label: 'Communities verwalten',
+                  icon: Icons.group,
+                  onPressed: () => context.go('/admin/communities'),
+                ),
+                _QuickActionButton(
+                  label: 'Foren verwalten',
+                  icon: Icons.forum,
+                  onPressed: () => context.go('/admin/forums'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Admin navigation drawer
+class _AdminDrawer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(Icons.admin_panel_settings, size: 48, color: Colors.white),
+                SizedBox(height: 8),
+                Text(
+                  'Admin Panel',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.dashboard),
+            title: const Text('Overview'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/admin');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.group),
+            title: const Text('Communities'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/admin/communities');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.forum),
+            title: const Text('Foren'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/admin/forums');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stat card widget
+class _StatCard extends StatelessWidget {
+  final String title;
+  final int count;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _StatCard({
+    required this.title,
+    required this.count,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 200,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 32, color: color),
+            const SizedBox(height: 16),
+            Text(
+              '$count',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.black87,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Quick action button
+class _QuickActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _QuickActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      ),
+    );
+  }
+}

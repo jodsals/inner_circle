@@ -1,0 +1,110 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    /// Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /// Get user data from Firestore
+    function getUserData() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    /// Check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
+    }
+
+    /// Check if user is moderator or admin
+    function isModerator() {
+      return isAuthenticated() && getUserData().role in ['moderator', 'admin'];
+    }
+
+    /// Validate file size (in bytes)
+    function isValidFileSize(maxSize) {
+      return request.resource.size <= maxSize;
+    }
+
+    /// Validate image content type
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // ============================================
+    // COMMUNITY BANNERS
+    // ============================================
+
+    match /communities/banners/{fileName} {
+      // Anyone can read banner images
+      allow read: if true;
+
+      // Only admins can upload banner images
+      // Max size: 5MB
+      // Must be an image
+      allow create: if isAdmin() &&
+                       isImage() &&
+                       isValidFileSize(5 * 1024 * 1024);
+
+      // Only admins can update banner images
+      allow update: if isAdmin() &&
+                       isImage() &&
+                       isValidFileSize(5 * 1024 * 1024);
+
+      // Only admins can delete banner images
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // USER PROFILE PICTURES (für zukünftige Implementierung)
+    // ============================================
+
+    match /users/{userId}/profile/{fileName} {
+      // Anyone can read profile pictures
+      allow read: if true;
+
+      // Users can upload their own profile pictures
+      // Max size: 2MB
+      // Must be an image
+      allow create: if isAuthenticated() &&
+                       request.auth.uid == userId &&
+                       isImage() &&
+                       isValidFileSize(2 * 1024 * 1024);
+
+      // Users can update their own profile pictures
+      allow update: if isAuthenticated() &&
+                       request.auth.uid == userId &&
+                       isImage() &&
+                       isValidFileSize(2 * 1024 * 1024);
+
+      // Users can delete their own profile pictures
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ============================================
+    // POST ATTACHMENTS (für zukünftige Implementierung)
+    // ============================================
+
+    match /posts/{postId}/attachments/{fileName} {
+      // Anyone can read post attachments
+      allow read: if true;
+
+      // Authenticated users can upload attachments to their posts
+      // Max size: 10MB
+      // Must be an image or PDF
+      allow create: if isAuthenticated() &&
+                       (isImage() || request.resource.contentType == 'application/pdf') &&
+                       isValidFileSize(10 * 1024 * 1024);
+
+      // Post authors and moderators can delete attachments
+      allow delete: if isModerator();
+    }
+  }
+}

@@ -3,57 +3,253 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    /// Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    /// Get user data from Firestore
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    /// Check if user is admin
     function isAdmin() {
-      return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() && getUserData().role == 'admin';
     }
 
+    /// Check if user is moderator or admin
     function isModerator() {
-      return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['moderator', 'admin'];
+      return isAuthenticated() && getUserData().role in ['moderator', 'admin'];
     }
 
-    // Users collection
+    /// Check if user owns this resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    /// Validate email format
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    /// Validate string is not empty and within length
+    function isValidString(text, minLen, maxLen) {
+      return text is string &&
+             text.size() >= minLen &&
+             text.size() <= maxLen;
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+
     match /users/{userId} {
-      // Anyone can read user documents
-      allow read: if true;
+      // Users can read their own profile, moderators and admins can read all
+      allow read: if isOwner(userId) || isModerator();
 
-      // Users can create their own document
-      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Users can create their own document during registration
+      allow create: if isAuthenticated() &&
+                       isOwner(userId) &&
+                       // Validate required fields
+                       request.resource.data.keys().hasAll(['id', 'email', 'role']) &&
+                       // Ensure ID matches
+                       request.resource.data.id == userId &&
+                       // Validate email
+                       isValidEmail(request.resource.data.email) &&
+                       // New users can only create with 'user' role
+                       request.resource.data.role == 'user' &&
+                       // Validate displayName if provided
+                       (!request.resource.data.keys().hasAny(['displayName']) ||
+                        isValidString(request.resource.data.displayName, 1, 50));
 
-      // Users can update their own document (except role field)
+      // Users can update their own profile (except restricted fields)
       allow update: if isAuthenticated() &&
-                       request.auth.uid == userId &&
-                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+                       isOwner(userId) &&
+                       // Cannot change these fields
+                       !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['id', 'email', 'role']) &&
+                       // Validate displayName if changed
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName']) ||
+                        isValidString(request.resource.data.displayName, 1, 50));
 
-      // Only admins can update user roles
-      allow update: if isAdmin();
+      // Admins can update any user (including role changes)
+      allow update: if isAdmin() &&
+                       // Admin can change role to valid values
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+                        request.resource.data.role in ['user', 'moderator', 'admin']);
 
       // Only admins can delete users
       allow delete: if isAdmin();
     }
 
-    // Communities collection
+    // ============================================
+    // COMMUNITIES COLLECTION
+    // ============================================
+
     match /communities/{communityId} {
-      // Anyone can read communities
+      // Anyone (including unauthenticated) can read communities
       allow read: if true;
 
-      // Only admins can create, update, or delete communities
-      allow create, update, delete: if isAdmin();
+      // Only admins can create communities
+      allow create: if isAdmin() &&
+                       // Validate required fields
+                       request.resource.data.keys().hasAll(['title', 'description']) &&
+                       // Validate title
+                       isValidString(request.resource.data.title, 3, 100) &&
+                       // Validate description
+                       isValidString(request.resource.data.description, 10, 1000) &&
+                       // Ensure memberCount is initialized
+                       request.resource.data.memberCount == 0;
 
-      // Forums subcollection
+      // Only admins can update communities
+      allow update: if isAdmin() &&
+                       // Validate title if changed
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title']) ||
+                        isValidString(request.resource.data.title, 3, 100)) &&
+                       // Validate description if changed
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['description']) ||
+                        isValidString(request.resource.data.description, 10, 1000));
+
+      // Only admins can delete communities
+      allow delete: if isAdmin();
+
+      // ============================================
+      // FORUMS SUBCOLLECTION
+      // ============================================
+
       match /forums/{forumId} {
-        // Anyone can read forums
+        // Anyone (including unauthenticated) can read forums
         allow read: if true;
 
-        // Only admins can create, update, or delete forums
-        allow create, update, delete: if isAdmin();
+        // Only admins can create forums
+        allow create: if isAdmin() &&
+                         // Validate required fields
+                         request.resource.data.keys().hasAll(['title']) &&
+                         // Validate title
+                         isValidString(request.resource.data.title, 3, 100);
+
+        // Only admins can update forums
+        allow update: if isAdmin() &&
+                         // Validate title if changed
+                         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title']) ||
+                          isValidString(request.resource.data.title, 3, 100));
+
+        // Only admins can delete forums
+        allow delete: if isAdmin();
+
+        // ============================================
+        // POSTS SUBCOLLECTION (für zukünftige Implementierung)
+        // ============================================
+
+        match /posts/{postId} {
+          // Anyone can read posts
+          allow read: if true;
+
+          // Authenticated users can create posts
+          allow create: if isAuthenticated() &&
+                           // Validate required fields
+                           request.resource.data.keys().hasAll(['authorId', 'title', 'content']) &&
+                           // Ensure author is current user
+                           request.resource.data.authorId == request.auth.uid &&
+                           // Validate title
+                           isValidString(request.resource.data.title, 5, 200) &&
+                           // Validate content
+                           isValidString(request.resource.data.content, 10, 10000);
+
+          // Users can update their own posts, moderators can update any
+          allow update: if (isAuthenticated() &&
+                           resource.data.authorId == request.auth.uid &&
+                           // Cannot change author
+                           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorId'])) ||
+                           isModerator();
+
+          // Users can delete their own posts, moderators can delete any
+          allow delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) ||
+                           isModerator();
+
+          // ============================================
+          // COMMENTS SUBCOLLECTION (für zukünftige Implementierung)
+          // ============================================
+
+          match /comments/{commentId} {
+            // Anyone can read comments
+            allow read: if true;
+
+            // Authenticated users can create comments
+            allow create: if isAuthenticated() &&
+                             // Validate required fields
+                             request.resource.data.keys().hasAll(['authorId', 'content']) &&
+                             // Ensure author is current user
+                             request.resource.data.authorId == request.auth.uid &&
+                             // Validate content
+                             isValidString(request.resource.data.content, 1, 2000);
+
+            // Users can update their own comments, moderators can update any
+            allow update: if (isAuthenticated() &&
+                             resource.data.authorId == request.auth.uid &&
+                             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorId'])) ||
+                             isModerator();
+
+            // Users can delete their own comments, moderators can delete any
+            allow delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) ||
+                             isModerator();
+          }
+        }
       }
+    }
+
+    // ============================================
+    // HEALTH PROFILES COLLECTION (für zukünftige Implementierung)
+    // ============================================
+
+    match /healthProfiles/{userId} {
+      // Users can only read their own health profile
+      allow read: if isOwner(userId);
+
+      // Users can create their own health profile
+      allow create: if isAuthenticated() &&
+                       isOwner(userId) &&
+                       request.resource.data.keys().hasAll(['userId']);
+
+      // Users can update their own health profile
+      allow update: if isAuthenticated() && isOwner(userId);
+
+      // Users can delete their own health profile
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // ============================================
+    // SURVEYS COLLECTION (für zukünftige Implementierung)
+    // ============================================
+
+    match /surveys/{surveyId} {
+      // Only authenticated users can read surveys
+      allow read: if isAuthenticated();
+
+      // Only admins can create/update/delete surveys
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // SURVEY RESPONSES COLLECTION (für zukünftige Implementierung)
+    // ============================================
+
+    match /surveyResponses/{responseId} {
+      // Users can only read their own survey responses
+      allow read: if isAuthenticated() &&
+                     resource.data.userId == request.auth.uid;
+
+      // Users can create their own survey responses
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+
+      // Users cannot update or delete survey responses (immutable)
+      allow update, delete: if false;
     }
   }
 }

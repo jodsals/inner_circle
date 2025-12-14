@@ -7,6 +7,15 @@ import '../../auth/presentation/providers/auth_providers.dart';
 import '../../admin/presentation/pages/admin_dashboard_page.dart';
 import '../../admin/presentation/pages/communities_page.dart';
 import '../../admin/presentation/pages/forums_page.dart';
+import '../../community/domain/entities/community.dart';
+import '../../community/presentation/pages/user_communities_page.dart';
+import '../../community/presentation/pages/community_detail_page.dart';
+import '../../community/presentation/pages/community_detail_loader.dart';
+import '../../forum/domain/entities/forum.dart';
+import '../../post/domain/entities/post.dart';
+import '../../post/presentation/pages/forum_posts_page.dart';
+import '../../post/presentation/pages/post_detail_page.dart';
+import '../../post/presentation/pages/create_post_page.dart';
 
 /// Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -67,11 +76,77 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // User home route (placeholder for now)
+      // User home route - redirects to communities
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const _HomePage(),
+        redirect: (context, state) => '/communities',
+      ),
+
+      // Communities routes (user-facing)
+      GoRoute(
+        path: '/communities',
+        name: 'communities',
+        builder: (context, state) => const UserCommunitiesPage(),
+        routes: [
+          // Community detail
+          GoRoute(
+            path: ':communityId',
+            name: 'community-detail',
+            builder: (context, state) {
+              final communityId = state.pathParameters['communityId']!;
+              final community = state.extra as Community?;
+
+              // If extra is null (e.g., page refresh), show a loading page that fetches the community
+              if (community == null) {
+                return CommunityDetailLoader(communityId: communityId);
+              }
+
+              return CommunityDetailPage(community: community);
+            },
+            routes: [
+              // Forums
+              GoRoute(
+                path: 'forums/:forumId',
+                name: 'forum-posts',
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>;
+                  return ForumPostsPage(
+                    community: extra['community'] as Community,
+                    forum: extra['forum'] as Forum,
+                  );
+                },
+                routes: [
+                  // Create post
+                  GoRoute(
+                    path: 'posts/create',
+                    name: 'create-post',
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>;
+                      return CreatePostPage(
+                        community: extra['community'] as Community,
+                        forum: extra['forum'] as Forum,
+                      );
+                    },
+                  ),
+                  // Post detail
+                  GoRoute(
+                    path: 'posts/:postId',
+                    name: 'post-detail',
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>;
+                      return PostDetailPage(
+                        community: extra['community'] as Community,
+                        forum: extra['forum'] as Forum,
+                        post: extra['post'] as Post,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
@@ -94,21 +169,4 @@ class _RouterNotifier extends ChangeNotifier {
   }
 
   final Ref _ref;
-}
-
-/// Placeholder home page for normal users
-class _HomePage extends StatelessWidget {
-  const _HomePage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-      ),
-      body: const Center(
-        child: Text('User Home - Coming Soon'),
-      ),
-    );
-  }
 }

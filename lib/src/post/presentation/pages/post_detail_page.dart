@@ -85,11 +85,15 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final commentsAsyncValue = ref.watch(watchCommentsProvider({
-      'communityId': widget.community.id,
-      'forumId': widget.forum.id,
-      'postId': widget.post.id,
-    }));
+    final commentsAsyncValue = ref.watch(
+      watchCommentsProvider(
+        CommentParams(
+          widget.community.id,
+          widget.forum.id,
+          widget.post.id,
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -171,11 +175,22 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 // Comments list
                 commentsAsyncValue.when(
                   data: (comments) {
+                    print('Comments loaded: ${comments.length} comments'); // Debug
+
                     if (comments.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text('Noch keine Kommentare'),
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            children: [
+                              const Text('Noch keine Kommentare'),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Post ID: ${widget.post.id}',
+                                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }
@@ -192,11 +207,29 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                       },
                     );
                   },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Center(
-                    child: Text('Fehler beim Laden der Kommentare: $error'),
-                  ),
+                  loading: () {
+                    print('Loading comments for post: ${widget.post.id}'); // Debug
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  error: (error, stack) {
+                    print('Error loading comments: $error'); // Debug
+                    print('Stack: $stack'); // Debug
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 32, color: Colors.red),
+                          const SizedBox(height: 8),
+                          Text('Fehler beim Laden der Kommentare: $error'),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () => ref.invalidate(watchCommentsProvider),
+                            child: const Text('Erneut versuchen'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

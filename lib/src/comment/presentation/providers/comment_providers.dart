@@ -10,6 +10,9 @@ import '../../domain/usecases/update_comment.dart';
 import '../../domain/usecases/watch_comments.dart';
 import 'comment_controller.dart';
 
+export 'comment_controller.dart' show CommentController;
+export 'comment_providers.dart' show CommentParams;
+
 // ============================================
 // DATA SOURCES
 // ============================================
@@ -68,17 +71,47 @@ final commentControllerProvider =
 // STREAM PROVIDERS FOR REAL-TIME UPDATES
 // ============================================
 
-/// Watch comments for a specific post
-final watchCommentsProvider = StreamProvider.family<List<dynamic>, Map<String, String>>((ref, params) {
-  final watchComments = ref.watch(watchCommentsUseCaseProvider);
-  final communityId = params['communityId']!;
-  final forumId = params['forumId']!;
-  final postId = params['postId']!;
+/// Parameter class for watchCommentsProvider
+class CommentParams {
+  final String communityId;
+  final String forumId;
+  final String postId;
 
-  return watchComments(communityId, forumId, postId).map(
+  const CommentParams(this.communityId, this.forumId, this.postId);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommentParams &&
+          runtimeType == other.runtimeType &&
+          communityId == other.communityId &&
+          forumId == other.forumId &&
+          postId == other.postId;
+
+  @override
+  int get hashCode =>
+      communityId.hashCode ^ forumId.hashCode ^ postId.hashCode;
+}
+
+/// Watch comments for a specific post
+final watchCommentsProvider = StreamProvider.family<List<dynamic>, CommentParams>((ref, params) {
+  print('Creating comment stream for community: ${params.communityId}, forum: ${params.forumId}, post: ${params.postId}');
+
+  final watchComments = ref.watch(watchCommentsUseCaseProvider);
+
+  return watchComments(params.communityId, params.forumId, params.postId).handleError((error) {
+    print('Error watching comments: $error');
+    return const [];
+  }).map(
     (either) => either.fold(
-      (failure) => throw Exception(failure.message),
-      (comments) => comments,
+      (failure) {
+        print('Failure loading comments: ${failure.message}');
+        return <dynamic>[];
+      },
+      (comments) {
+        print('Successfully loaded ${comments.length} comments');
+        return comments;
+      },
     ),
   );
 });

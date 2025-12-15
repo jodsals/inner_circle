@@ -16,6 +16,7 @@ import '../../post/domain/entities/post.dart';
 import '../../post/presentation/pages/forum_posts_page.dart';
 import '../../post/presentation/pages/post_detail_page.dart';
 import '../../post/presentation/pages/create_post_page.dart';
+import '../../post/presentation/pages/posts_debug_page.dart';
 
 /// Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -117,6 +118,19 @@ final routerProvider = Provider<GoRouter>((ref) {
                   );
                 },
                 routes: [
+                  // Debug page for direct Firestore access
+                  GoRoute(
+                    path: 'debug',
+                    name: 'forum-posts-debug',
+                    builder: (context, state) {
+                      final communityId = state.pathParameters['communityId']!;
+                      final forumId = state.pathParameters['forumId']!;
+                      return PostsDebugPage(
+                        communityId: communityId,
+                        forumId: forumId,
+                      );
+                    },
+                  ),
                   // Create post
                   GoRoute(
                     path: 'posts/create',

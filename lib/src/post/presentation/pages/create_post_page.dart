@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../community/domain/entities/community.dart';
 import '../../../forum/domain/entities/forum.dart';
+import '../../../moderation/presentation/providers/moderation_providers.dart';
 import '../providers/post_providers.dart';
 
 /// Page for creating or editing a post
@@ -53,6 +54,22 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
     setState(() => _isSubmitting = true);
 
+    // Step 1: Moderate content
+    final analyzeContent = ref.read(analyzeContentProvider);
+    final combinedContent = '${_titleController.text.trim()}\n${_contentController.text.trim()}';
+
+    final moderationResult = await analyzeContent(content: combinedContent);
+
+    // Step 2: Check if content is flagged
+    if (moderationResult.isFlagged) {
+      setState(() => _isSubmitting = false);
+      if (mounted) {
+        _showModerationDialog(moderationResult, user.id);
+      }
+      return;
+    }
+
+    // Step 3: Content is safe, create post
     final controller = ref.read(postControllerProvider.notifier);
 
     final post = await controller.createNewPost(
@@ -77,6 +94,81 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Fehler: $error')),
       );
+    }
+  }
+
+  void _showModerationDialog(dynamic moderationResult, String userId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Inhalt blockiert'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Dein Post wurde von unserem Moderationssystem blockiert.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text('Grund: ${moderationResult.analysis}'),
+            if (moderationResult.reasons.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Kategorien: ${moderationResult.reasons.join(", ")}'),
+            ],
+            const SizedBox(height: 12),
+            const Text(
+              'Du kannst eine manuelle Überprüfung beantragen, wenn du glaubst, dass dies ein Fehler ist.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text('Abbrechen'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              context.pop();
+              await _requestReview(userId, moderationResult);
+            },
+            child: const Text('Review beantragen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _requestReview(String userId, dynamic moderationResult) async {
+    try {
+      final createReview = ref.read(createReviewRequestProvider);
+      await createReview(
+        userId: userId,
+        content: '${_titleController.text.trim()}\n\n${_contentController.text.trim()}',
+        contentType: 'post',
+        communityId: widget.community.id,
+        forumId: widget.forum.id,
+        flagReasons: moderationResult.reasons,
+        confidenceScore: moderationResult.confidenceScore,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Review-Anfrage wurde gesendet. Ein Admin wird deinen Post überprüfen.'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler beim Senden der Review-Anfrage: $e')),
+        );
+      }
     }
   }
 

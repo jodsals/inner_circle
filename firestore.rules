@@ -264,6 +264,35 @@ service cloud.firestore {
     }
 
     // ============================================
+    // REVIEW REQUESTS COLLECTION
+    // ============================================
+
+    match /reviewRequests/{requestId} {
+      // Users can read their own review requests, admins can read all
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+
+      // Users can create their own review requests
+      allow create: if isAuthenticated() &&
+                       // Validate required fields
+                       request.resource.data.keys().hasAll(['userId', 'content', 'contentType', 'flagReasons', 'confidenceScore', 'status', 'requestedAt']) &&
+                       // Ensure user is creating their own review
+                       request.resource.data.userId == request.auth.uid &&
+                       // Status must be pending on creation
+                       request.resource.data.status == 'pending';
+
+      // Only admins can update review requests (approve/reject)
+      allow update: if isAdmin() &&
+                       // Can only update status, reviewedAt, reviewedBy, reviewNotes
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedAt', 'reviewedBy', 'reviewNotes']) &&
+                       // Status must be valid
+                       request.resource.data.status in ['pending', 'approved', 'rejected'];
+
+      // Only admins can delete review requests
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
     // HEALTH PROFILES COLLECTION (für zukünftige Implementierung)
     // ============================================
 

@@ -81,3 +81,9 @@ final forumsStreamProvider = StreamProvider.family((ref, String communityId) {
   final useCase = ref.watch(watchForumsUseCaseProvider);
   return useCase(communityId);
 });
+
+/// Watch forums provider (returns Future for easier use in home_providers)
+final watchForumsProvider = FutureProvider.family((ref, String communityId) async {
+  final streamResult = await ref.watch(forumsStreamProvider(communityId).future);
+  return streamResult;
+});

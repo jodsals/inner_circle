@@ -7,6 +7,7 @@ class Community extends Equatable {
   final String description;
   final String? bannerImage;
   final int memberCount;
+  final int likeCount;
   final DateTime createdAt;
 
   const Community({
@@ -15,6 +16,7 @@ class Community extends Equatable {
     required this.description,
     this.bannerImage,
     this.memberCount = 0,
+    this.likeCount = 0,
     required this.createdAt,
   });
 
@@ -25,6 +27,7 @@ class Community extends Equatable {
     String? description,
     String? bannerImage,
     int? memberCount,
+    int? likeCount,
     DateTime? createdAt,
   }) {
     return Community(
@@ -33,6 +36,7 @@ class Community extends Equatable {
       description: description ?? this.description,
       bannerImage: bannerImage ?? this.bannerImage,
       memberCount: memberCount ?? this.memberCount,
+      likeCount: likeCount ?? this.likeCount,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -44,6 +48,7 @@ class Community extends Equatable {
         description,
         bannerImage,
         memberCount,
+        likeCount,
         createdAt,
       ];
 

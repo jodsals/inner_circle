@@ -23,6 +23,11 @@ abstract class CommunityRemoteDataSource {
   });
   Future<void> deleteCommunity(String id);
   Stream<List<CommunityModel>> watchCommunities();
+
+  // Like operations
+  Future<void> likeCommunity({required String userId, required String communityId});
+  Future<void> unlikeCommunity({required String userId, required String communityId});
+  Future<bool> isLiked({required String userId, required String communityId});
 }
 
 /// Implementation of community remote data source
@@ -90,6 +95,7 @@ class FirebaseCommunityRemoteDataSource implements CommunityRemoteDataSource {
         'description': description,
         'bannerImage': bannerImageUrl,
         'memberCount': 0,
+        'likeCount': 0,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -211,6 +217,78 @@ class FirebaseCommunityRemoteDataSource implements CommunityRemoteDataSource {
     } catch (e) {
       // Ignore errors when deleting images
       // Image might already be deleted or URL might be invalid
+    }
+  }
+
+  // ============================================
+  // LIKE OPERATIONS
+  // ============================================
+
+  @override
+  Future<void> likeCommunity({
+    required String userId,
+    required String communityId,
+  }) async {
+    try {
+      final likeId = '${userId}_$communityId';
+
+      // Create like document
+      await firestore.collection('communityLikes').doc(likeId).set({
+        'id': likeId,
+        'userId': userId,
+        'communityId': communityId,
+        'likedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Increment like count
+      await _communitiesCollection.doc(communityId).update({
+        'likeCount': FieldValue.increment(1),
+      });
+    } on FirebaseException catch (e) {
+      throw ServerException('Failed to like community: ${e.message}');
+    } catch (e) {
+      throw ServerException('Failed to like community: $e');
+    }
+  }
+
+  @override
+  Future<void> unlikeCommunity({
+    required String userId,
+    required String communityId,
+  }) async {
+    try {
+      final likeId = '${userId}_$communityId';
+
+      // Delete like document
+      await firestore.collection('communityLikes').doc(likeId).delete();
+
+      // Decrement like count
+      await _communitiesCollection.doc(communityId).update({
+        'likeCount': FieldValue.increment(-1),
+      });
+    } on FirebaseException catch (e) {
+      throw ServerException('Failed to unlike community: ${e.message}');
+    } catch (e) {
+      throw ServerException('Failed to unlike community: $e');
+    }
+  }
+
+  @override
+  Future<bool> isLiked({
+    required String userId,
+    required String communityId,
+  }) async {
+    try {
+      final likeId = '${userId}_$communityId';
+      final doc = await firestore
+          .collection('communityLikes')
+          .doc(likeId)
+          .get(const GetOptions(source: Source.server));
+      return doc.exists;
+    } on FirebaseException catch (e) {
+      throw ServerException('Failed to check like status: ${e.message}');
+    } catch (e) {
+      throw ServerException('Failed to check like status: $e');
     }
   }
 }

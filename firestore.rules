@@ -106,7 +106,7 @@ service cloud.firestore {
                        // Ensure memberCount is initialized
                        request.resource.data.memberCount == 0;
 
-      // Only admins can update communities
+      // Admins can update all community fields
       allow update: if isAdmin() &&
                        // Validate title if changed
                        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title']) ||
@@ -114,6 +114,26 @@ service cloud.firestore {
                        // Validate description if changed
                        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['description']) ||
                         isValidString(request.resource.data.description, 10, 1000));
+
+      // Authenticated users can update memberCount (for join/leave operations)
+      allow update: if isAuthenticated() &&
+                       // Only memberCount can be changed
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount']) &&
+                       // MemberCount must be a number
+                       request.resource.data.memberCount is int &&
+                       // MemberCount can only increase or decrease by 1
+                       (request.resource.data.memberCount == resource.data.memberCount + 1 ||
+                        request.resource.data.memberCount == resource.data.memberCount - 1);
+
+      // Authenticated users can update likeCount (for like/unlike operations)
+      allow update: if isAuthenticated() &&
+                       // Only likeCount can be changed
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount']) &&
+                       // LikeCount must be a number
+                       request.resource.data.likeCount is int &&
+                       // LikeCount can only increase or decrease by 1
+                       (request.resource.data.likeCount == resource.data.likeCount + 1 ||
+                        request.resource.data.likeCount == resource.data.likeCount - 1);
 
       // Only admins can delete communities
       allow delete: if isAdmin();
@@ -201,6 +221,46 @@ service cloud.firestore {
           }
         }
       }
+    }
+
+    // ============================================
+    // MEMBERSHIPS COLLECTION
+    // ============================================
+
+    match /memberships/{membershipId} {
+      // Anyone can read memberships (to check if user is member)
+      allow read: if true;
+
+      // Authenticated users can create their own memberships
+      allow create: if isAuthenticated() &&
+                       // Validate required fields
+                       request.resource.data.keys().hasAll(['userId', 'communityId']) &&
+                       // Ensure user is creating their own membership
+                       request.resource.data.userId == request.auth.uid;
+
+      // Users can delete their own memberships (leave community)
+      allow delete: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+    }
+
+    // ============================================
+    // COMMUNITY LIKES COLLECTION
+    // ============================================
+
+    match /communityLikes/{likeId} {
+      // Anyone can read likes (to check if user has liked)
+      allow read: if true;
+
+      // Authenticated users can create their own likes
+      allow create: if isAuthenticated() &&
+                       // Validate required fields
+                       request.resource.data.keys().hasAll(['userId', 'communityId']) &&
+                       // Ensure user is creating their own like
+                       request.resource.data.userId == request.auth.uid;
+
+      // Users can delete their own likes (unlike community)
+      allow delete: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
     }
 
     // ============================================

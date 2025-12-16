@@ -7,16 +7,16 @@ import '../../auth/presentation/providers/auth_providers.dart';
 import '../../admin/presentation/pages/admin_dashboard_page.dart';
 import '../../admin/presentation/pages/communities_page.dart';
 import '../../admin/presentation/pages/forums_page.dart';
+import '../presentation/pages/app_shell.dart';
 import '../../community/domain/entities/community.dart';
 import '../../community/presentation/pages/user_communities_page.dart';
-import '../../community/presentation/pages/community_detail_page.dart';
+import '../../community/presentation/pages/community_detail_page_new.dart';
 import '../../community/presentation/pages/community_detail_loader.dart';
 import '../../forum/domain/entities/forum.dart';
 import '../../post/domain/entities/post.dart';
 import '../../post/presentation/pages/forum_posts_page.dart';
 import '../../post/presentation/pages/post_detail_page.dart';
 import '../../post/presentation/pages/create_post_page.dart';
-import '../../post/presentation/pages/posts_debug_page.dart';
 
 /// Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -38,13 +38,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Logged in but on auth page -> redirect based on role
       if (isAuthPage) {
-        return user.role.isAdmin ? '/admin' : '/home';
+        return user.role.isAdmin ? '/admin' : '/app';
       }
 
       // Check admin routes
       if (state.matchedLocation.startsWith('/admin')) {
         if (!user.role.isAdmin) {
-          return '/home'; // Non-admin trying to access admin -> redirect to home
+          return '/app'; // Non-admin trying to access admin -> redirect to app
         }
       }
 
@@ -77,11 +77,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // User home route - redirects to communities
+      // Main app shell (user-facing)
       GoRoute(
-        path: '/home',
-        name: 'home',
-        redirect: (context, state) => '/communities',
+        path: '/app',
+        name: 'app',
+        builder: (context, state) => const AppShell(),
       ),
 
       // Communities routes (user-facing)
@@ -103,7 +103,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 return CommunityDetailLoader(communityId: communityId);
               }
 
-              return CommunityDetailPage(community: community);
+              return CommunityDetailPageNew(community: community);
             },
             routes: [
               // Forums
@@ -118,19 +118,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                   );
                 },
                 routes: [
-                  // Debug page for direct Firestore access
-                  GoRoute(
-                    path: 'debug',
-                    name: 'forum-posts-debug',
-                    builder: (context, state) {
-                      final communityId = state.pathParameters['communityId']!;
-                      final forumId = state.pathParameters['forumId']!;
-                      return PostsDebugPage(
-                        communityId: communityId,
-                        forumId: forumId,
-                      );
-                    },
-                  ),
                   // Create post
                   GoRoute(
                     path: 'posts/create',

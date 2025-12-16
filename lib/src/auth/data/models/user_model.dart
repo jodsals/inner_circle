@@ -64,18 +64,28 @@ class UserModel extends User {
 
   /// Convert to Firestore Map
   Map<String, dynamic> toFirestore() {
-    return {
+    final data = <String, dynamic>{
+      'id': id,
       'email': email,
-      'displayName': displayName,
-      'photoUrl': photoUrl,
       'role': role.name,
       'isAnonymous': isAnonymous,
-      'lastSurveyDate':
-          lastSurveyDate != null ? Timestamp.fromDate(lastSurveyDate!) : null,
       'hasCompletedInitialSurvey': hasCompletedInitialSurvey,
       'createdAt': FieldValue.serverTimestamp(),
       'lastLogin': FieldValue.serverTimestamp(),
     };
+
+    // Only include optional fields if they are not null
+    if (displayName != null) {
+      data['displayName'] = displayName;
+    }
+    if (photoUrl != null) {
+      data['photoUrl'] = photoUrl;
+    }
+    if (lastSurveyDate != null) {
+      data['lastSurveyDate'] = Timestamp.fromDate(lastSurveyDate!);
+    }
+
+    return data;
   }
 
   /// Convert to Map for local storage

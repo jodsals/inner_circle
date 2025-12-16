@@ -10,6 +10,7 @@ class CommunityModel extends Community {
     required super.description,
     super.bannerImage,
     super.memberCount,
+    super.likeCount,
     required super.createdAt,
   });
 
@@ -22,6 +23,7 @@ class CommunityModel extends Community {
       description: data['description'] as String? ?? '',
       bannerImage: data['bannerImage'] as String?,
       memberCount: data['memberCount'] as int? ?? 0,
+      likeCount: data['likeCount'] as int? ?? 0,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -34,6 +36,7 @@ class CommunityModel extends Community {
       description: map['description'] as String? ?? '',
       bannerImage: map['bannerImage'] as String?,
       memberCount: map['memberCount'] as int? ?? 0,
+      likeCount: map['likeCount'] as int? ?? 0,
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'] as String)
           : DateTime.now(),
@@ -47,6 +50,7 @@ class CommunityModel extends Community {
       'description': description,
       'bannerImage': bannerImage,
       'memberCount': memberCount,
+      'likeCount': likeCount,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -59,6 +63,7 @@ class CommunityModel extends Community {
       'description': description,
       'bannerImage': bannerImage,
       'memberCount': memberCount,
+      'likeCount': likeCount,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -71,6 +76,7 @@ class CommunityModel extends Community {
       description: community.description,
       bannerImage: community.bannerImage,
       memberCount: community.memberCount,
+      likeCount: community.likeCount,
       createdAt: community.createdAt,
     );
   }
@@ -83,6 +89,7 @@ class CommunityModel extends Community {
     String? description,
     String? bannerImage,
     int? memberCount,
+    int? likeCount,
     DateTime? createdAt,
   }) {
     return CommunityModel(
@@ -91,6 +98,7 @@ class CommunityModel extends Community {
       description: description ?? this.description,
       bannerImage: bannerImage ?? this.bannerImage,
       memberCount: memberCount ?? this.memberCount,
+      likeCount: likeCount ?? this.likeCount,
       createdAt: createdAt ?? this.createdAt,
     );
   }

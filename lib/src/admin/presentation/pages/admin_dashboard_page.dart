@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../community/presentation/providers/community_providers.dart';
+import '../../../moderation/presentation/providers/moderation_providers.dart';
 
 /// Admin dashboard page
 class AdminDashboardPage extends ConsumerWidget {
@@ -13,6 +14,7 @@ class AdminDashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final communityState = ref.watch(communityControllerProvider);
+    final reviewsAsync = ref.watch(watchPendingReviewsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -32,11 +34,12 @@ class AdminDashboardPage extends ConsumerWidget {
         ],
       ),
       drawer: _AdminDrawer(),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Text(
               'Willkommen, ${user?.email ?? 'Admin'}',
               style: Theme.of(context).textTheme.headlineSmall,
@@ -62,6 +65,29 @@ class AdminDashboardPage extends ConsumerWidget {
                   color: Colors.green,
                   onTap: () => context.go('/admin/forums'),
                 ),
+                reviewsAsync.when(
+                  data: (reviews) => _StatCard(
+                    title: 'Ausstehende Reviews',
+                    count: reviews.length,
+                    icon: Icons.flag,
+                    color: reviews.isEmpty ? Colors.green : Colors.orange,
+                    onTap: () => context.go('/admin/reviews'),
+                  ),
+                  loading: () => _StatCard(
+                    title: 'Ausstehende Reviews',
+                    count: 0,
+                    icon: Icons.flag,
+                    color: Colors.grey,
+                    onTap: () => context.go('/admin/reviews'),
+                  ),
+                  error: (_, __) => _StatCard(
+                    title: 'Ausstehende Reviews',
+                    count: 0,
+                    icon: Icons.flag,
+                    color: Colors.red,
+                    onTap: () => context.go('/admin/reviews'),
+                  ),
+                ),
               ],
             ),
 
@@ -79,6 +105,11 @@ class AdminDashboardPage extends ConsumerWidget {
               runSpacing: 16,
               children: [
                 _QuickActionButton(
+                  label: 'Inhalte überprüfen',
+                  icon: Icons.flag,
+                  onPressed: () => context.go('/admin/reviews'),
+                ),
+                _QuickActionButton(
                   label: 'Communities verwalten',
                   icon: Icons.group,
                   onPressed: () => context.go('/admin/communities'),
@@ -90,7 +121,8 @@ class AdminDashboardPage extends ConsumerWidget {
                 ),
               ],
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -132,6 +164,14 @@ class _AdminDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               context.go('/admin');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.flag),
+            title: const Text('Inhalte überprüfen'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go('/admin/reviews');
             },
           ),
           ListTile(

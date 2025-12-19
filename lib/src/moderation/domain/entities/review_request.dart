@@ -8,6 +8,9 @@ class ReviewRequest extends Equatable {
   final String contentType; // 'post' or 'comment'
   final String? communityId;
   final String? forumId;
+  final String? title; // Post title (only for contentType='post')
+  final String? authorName; // Author display name
+  final String? authorPhotoUrl; // Author photo URL
   final List<String> flagReasons;
   final double confidenceScore;
   final String status; // 'pending', 'approved', 'rejected'
@@ -23,6 +26,9 @@ class ReviewRequest extends Equatable {
     required this.contentType,
     this.communityId,
     this.forumId,
+    this.title,
+    this.authorName,
+    this.authorPhotoUrl,
     required this.flagReasons,
     required this.confidenceScore,
     this.status = 'pending',
@@ -48,6 +54,9 @@ class ReviewRequest extends Equatable {
     String? contentType,
     String? communityId,
     String? forumId,
+    String? title,
+    String? authorName,
+    String? authorPhotoUrl,
     List<String>? flagReasons,
     double? confidenceScore,
     String? status,
@@ -63,6 +72,9 @@ class ReviewRequest extends Equatable {
       contentType: contentType ?? this.contentType,
       communityId: communityId ?? this.communityId,
       forumId: forumId ?? this.forumId,
+      title: title ?? this.title,
+      authorName: authorName ?? this.authorName,
+      authorPhotoUrl: authorPhotoUrl ?? this.authorPhotoUrl,
       flagReasons: flagReasons ?? this.flagReasons,
       confidenceScore: confidenceScore ?? this.confidenceScore,
       status: status ?? this.status,
@@ -81,6 +93,9 @@ class ReviewRequest extends Equatable {
         contentType,
         communityId,
         forumId,
+        title,
+        authorName,
+        authorPhotoUrl,
         flagReasons,
         confidenceScore,
         status,

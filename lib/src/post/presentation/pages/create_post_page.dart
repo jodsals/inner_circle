@@ -143,10 +143,16 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
   Future<void> _requestReview(String userId, dynamic moderationResult) async {
     try {
+      final authState = ref.read(authControllerProvider);
+      final user = authState.user;
+
       final createReview = ref.read(createReviewRequestProvider);
       await createReview(
         userId: userId,
-        content: '${_titleController.text.trim()}\n\n${_contentController.text.trim()}',
+        content: _contentController.text.trim(),
+        title: _titleController.text.trim(),
+        authorName: user?.displayName ?? user?.email ?? 'Unbekannt',
+        authorPhotoUrl: user?.photoUrl,
         contentType: 'post',
         communityId: widget.community.id,
         forumId: widget.forum.id,

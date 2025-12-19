@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/presentation/pages/auth_page.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import '../../admin/presentation/pages/admin_dashboard_page.dart';
+import '../../admin/presentation/pages/admin_reviews_page.dart';
 import '../../admin/presentation/pages/communities_page.dart';
 import '../../admin/presentation/pages/forums_page.dart';
 import '../presentation/pages/app_shell.dart';
@@ -64,6 +65,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'admin',
         builder: (context, state) => const AdminDashboardPage(),
         routes: [
+          GoRoute(
+            path: 'reviews',
+            name: 'admin-reviews',
+            builder: (context, state) => const AdminReviewsPage(),
+          ),
           GoRoute(
             path: 'communities',
             name: 'admin-communities',

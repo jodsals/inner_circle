@@ -7,6 +7,7 @@ import '../models/review_request_model.dart';
 abstract class ReviewRemoteDataSource {
   Future<String> createReviewRequest(ReviewRequestModel request);
   Future<List<ReviewRequestModel>> getPendingReviews();
+  Stream<List<ReviewRequestModel>> watchPendingReviews();
   Future<ReviewRequestModel> getReviewRequest(String id);
   Future<void> approveReview(String id, String reviewedBy, String? notes);
   Future<void> rejectReview(String id, String reviewedBy, String? notes);
@@ -48,6 +49,21 @@ class FirebaseReviewRemoteDataSource implements ReviewRemoteDataSource {
       throw ServerException('Failed to get pending reviews: ${e.message}');
     } catch (e) {
       throw ServerException('Failed to get pending reviews: $e');
+    }
+  }
+
+  @override
+  Stream<List<ReviewRequestModel>> watchPendingReviews() {
+    try {
+      return _reviewsCollection
+          .where('status', isEqualTo: 'pending')
+          .orderBy('requestedAt', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => ReviewRequestModel.fromFirestore(doc))
+              .toList());
+    } catch (e) {
+      throw ServerException('Failed to watch pending reviews: $e');
     }
   }
 

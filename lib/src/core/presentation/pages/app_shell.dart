@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../community/presentation/pages/user_communities_page.dart';
 import '../../../home/presentation/pages/home_page.dart';
+import '../../../news/presentation/pages/news_page.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_icon.dart';
 
@@ -20,7 +21,7 @@ class _AppShellState extends State<AppShell> {
     const HomePage(),
     const _SearchPage(),
     const UserCommunitiesPage(),
-    const _NewsPage(),
+    const NewsPage(),
     const _AccountPage(),
   ];
 
@@ -135,16 +136,6 @@ class _SearchPage extends StatelessWidget {
   }
 }
 
-class _NewsPage extends StatelessWidget {
-  const _NewsPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('News Page - To be implemented')),
-    );
-  }
-}
 
 class _AccountPage extends StatelessWidget {
   const _AccountPage();

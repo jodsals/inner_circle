@@ -11,7 +11,8 @@ import '../../data/services/ai_moderation_service.dart';
 // ============================================================================
 
 final aiModerationServiceProvider = Provider<AIModerationService>((ref) {
-  return AIModerationService();
+  final secureStorage = ref.watch(secureStorageServiceProvider);
+  return AIModerationService(secureStorage: secureStorage);
 });
 
 // ============================================================================

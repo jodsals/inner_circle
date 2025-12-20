@@ -9,7 +9,7 @@ import '../models/user_model.dart';
 abstract class AuthRemoteDataSource {
   Stream<UserModel?> get authStateChanges;
   Future<UserModel?> getCurrentUser();
-  Future<UserModel> registerWithEmail(String email, String password);
+  Future<UserModel> registerWithEmail(String email, String password, [String? displayName]);
   Future<UserModel> loginWithEmail(String email, String password);
   Future<UserModel> loginAnonymously();
   Future<UserModel> loginWithGoogle();
@@ -17,6 +17,7 @@ abstract class AuthRemoteDataSource {
   Future<void> sendPasswordResetEmail(String email);
   Future<void> updateDisplayName(String displayName);
   Future<void> updatePhotoUrl(String photoUrl);
+  Future<void> updatePassword(String newPassword);
   Future<void> deleteAccount();
   Future<void> reauthenticateWithPassword(String password);
 }
@@ -78,7 +79,7 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> registerWithEmail(String email, String password) async {
+  Future<UserModel> registerWithEmail(String email, String password, [String? displayName]) async {
     try {
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
@@ -89,11 +90,23 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
         throw const AuthException('User creation failed');
       }
 
+      // Set display name in Firebase Auth if provided
+      if (displayName != null && displayName.isNotEmpty) {
+        await credential.user!.updateDisplayName(displayName);
+        await credential.user!.reload();
+      }
+
+      // Get updated user after setting display name
+      final updatedUser = _firebaseAuth.currentUser;
+      if (updatedUser == null) {
+        throw const AuthException('Failed to get updated user');
+      }
+
       // Create user profile in Firestore
-      final userModel = UserModel.fromFirebaseAuth(credential.user!);
+      final userModel = UserModel.fromFirebaseAuth(updatedUser);
       await _firestore
           .collection('users')
-          .doc(credential.user!.uid)
+          .doc(updatedUser.uid)
           .set(userModel.toFirestore());
 
       return userModel;
@@ -277,6 +290,28 @@ class FirebaseAuthRemoteDataSource implements AuthRemoteDataSource {
           .update({'photoUrl': photoUrl});
     } catch (e) {
       throw AuthException('Update photo URL failed: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) throw const AuthException('No user logged in');
+
+      await user.updatePassword(newPassword);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw const AuthException(
+          'Bitte melden Sie sich erneut an, um Ihr Passwort zu ändern',
+        );
+      }
+      if (e.code == 'weak-password') {
+        throw const AuthException('Das neue Passwort ist zu schwach');
+      }
+      throw _mapFirebaseAuthException(e);
+    } catch (e) {
+      throw AuthException('Password update failed: ${e.toString()}');
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/presentation/pages/account_settings_page.dart';
 import '../../auth/presentation/pages/auth_page.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import '../../admin/presentation/pages/admin_dashboard_page.dart';
@@ -17,7 +18,9 @@ import '../../forum/domain/entities/forum.dart';
 import '../../post/domain/entities/post.dart';
 import '../../post/presentation/pages/forum_posts_page.dart';
 import '../../post/presentation/pages/post_detail_page.dart';
+import '../../post/presentation/pages/post_detail_loader.dart';
 import '../../post/presentation/pages/create_post_page.dart';
+import '../../search/presentation/pages/search_page.dart';
 
 /// Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -90,6 +93,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AppShell(),
       ),
 
+      // Search route
+      GoRoute(
+        path: '/search',
+        name: 'search',
+        builder: (context, state) => const SearchPage(),
+      ),
+
+      // Account settings route
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const AccountSettingsPage(),
+      ),
+
       // Communities routes (user-facing)
       GoRoute(
         path: '/communities',
@@ -141,7 +158,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'posts/:postId',
                     name: 'post-detail',
                     builder: (context, state) {
-                      final extra = state.extra as Map<String, dynamic>;
+                      final communityId = state.pathParameters['communityId']!;
+                      final forumId = state.pathParameters['forumId']!;
+                      final postId = state.pathParameters['postId']!;
+                      final extra = state.extra as Map<String, dynamic>?;
+
+                      // Wenn extra null ist, verwende den Loader
+                      if (extra == null) {
+                        return PostDetailLoader(
+                          communityId: communityId,
+                          forumId: forumId,
+                          postId: postId,
+                        );
+                      }
+
                       return PostDetailPage(
                         community: extra['community'] as Community,
                         forum: extra['forum'] as Forum,

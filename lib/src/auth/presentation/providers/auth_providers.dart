@@ -4,10 +4,15 @@ import '../../../../core/di/providers.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/usecases/delete_account.dart';
 import '../../domain/usecases/get_current_user.dart';
 import '../../domain/usecases/login_with_email.dart';
 import '../../domain/usecases/logout.dart';
+import '../../domain/usecases/reauthenticate_with_password.dart';
 import '../../domain/usecases/register_with_email.dart';
+import '../../domain/usecases/update_display_name.dart';
+import '../../domain/usecases/update_password.dart';
+import '../../domain/usecases/update_photo_url.dart';
 import '../state/auth_state.dart';
 import 'auth_controller.dart';
 
@@ -62,6 +67,31 @@ final getCurrentUserUseCaseProvider = Provider<GetCurrentUserUseCase>((ref) {
   return GetCurrentUserUseCase(ref.watch(authRepositoryProvider));
 });
 
+/// Update display name use case provider
+final updateDisplayNameUseCaseProvider = Provider<UpdateDisplayNameUseCase>((ref) {
+  return UpdateDisplayNameUseCase(ref.watch(authRepositoryProvider));
+});
+
+/// Update photo URL use case provider
+final updatePhotoUrlUseCaseProvider = Provider<UpdatePhotoUrlUseCase>((ref) {
+  return UpdatePhotoUrlUseCase(ref.watch(authRepositoryProvider));
+});
+
+/// Update password use case provider
+final updatePasswordUseCaseProvider = Provider<UpdatePasswordUseCase>((ref) {
+  return UpdatePasswordUseCase(ref.watch(authRepositoryProvider));
+});
+
+/// Delete account use case provider
+final deleteAccountUseCaseProvider = Provider<DeleteAccountUseCase>((ref) {
+  return DeleteAccountUseCase(ref.watch(authRepositoryProvider));
+});
+
+/// Reauthenticate with password use case provider
+final reauthenticateWithPasswordUseCaseProvider = Provider<ReauthenticateWithPasswordUseCase>((ref) {
+  return ReauthenticateWithPasswordUseCase(ref.watch(authRepositoryProvider));
+});
+
 // ============================================================================
 // Controllers
 // ============================================================================
@@ -73,6 +103,11 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
     registerWithEmailUseCase: ref.watch(registerWithEmailUseCaseProvider),
     logoutUseCase: ref.watch(logoutUseCaseProvider),
     getCurrentUserUseCase: ref.watch(getCurrentUserUseCaseProvider),
+    updateDisplayNameUseCase: ref.watch(updateDisplayNameUseCaseProvider),
+    updatePhotoUrlUseCase: ref.watch(updatePhotoUrlUseCaseProvider),
+    updatePasswordUseCase: ref.watch(updatePasswordUseCaseProvider),
+    deleteAccountUseCase: ref.watch(deleteAccountUseCaseProvider),
+    reauthenticateWithPasswordUseCase: ref.watch(reauthenticateWithPasswordUseCaseProvider),
   );
 });
 

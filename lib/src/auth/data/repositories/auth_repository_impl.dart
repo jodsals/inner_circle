@@ -37,13 +37,18 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User>> registerWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     if (!await _networkInfo.isConnected) {
       return Left(NetworkFailure('No internet connection'));
     }
 
     try {
-      final user = await _remoteDataSource.registerWithEmail(email, password);
+      final user = await _remoteDataSource.registerWithEmail(
+        email,
+        password,
+        displayName,
+      );
       return Right(user);
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
@@ -167,6 +172,24 @@ class AuthRepositoryImpl implements AuthRepository {
 
     try {
       await _remoteDataSource.updatePhotoUrl(photoUrl);
+      return const Right(null);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } on NetworkException {
+      return Left(NetworkFailure('No internet connection'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updatePassword(String newPassword) async {
+    if (!await _networkInfo.isConnected) {
+      return Left(NetworkFailure('No internet connection'));
+    }
+
+    try {
+      await _remoteDataSource.updatePassword(newPassword);
       return const Right(null);
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));

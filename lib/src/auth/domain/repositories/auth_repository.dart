@@ -20,6 +20,7 @@ abstract class AuthRepository {
   Future<Either<Failure, User>> registerWithEmail({
     required String email,
     required String password,
+    String? displayName,
   });
 
   /// Login with email and password
@@ -48,6 +49,9 @@ abstract class AuthRepository {
 
   /// Update user photo URL
   Future<Either<Failure, void>> updatePhotoUrl(String photoUrl);
+
+  /// Update user password
+  Future<Either<Failure, void>> updatePassword(String newPassword);
 
   /// Delete user account
   Future<Either<Failure, void>> deleteAccount();

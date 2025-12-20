@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../auth/presentation/pages/account_settings_page.dart';
 import '../../../community/presentation/pages/user_communities_page.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../../../news/presentation/pages/news_page.dart';
+import '../../../search/presentation/pages/search_page.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_icon.dart';
 
@@ -19,10 +21,10 @@ class _AppShellState extends State<AppShell> {
   // Main app pages
   final List<Widget> _pages = [
     const HomePage(),
-    const _SearchPage(),
+    const SearchPage(),
     const UserCommunitiesPage(),
     const NewsPage(),
-    const _AccountPage(),
+    const AccountSettingsPage(),
   ];
 
   @override
@@ -119,31 +121,6 @@ class _AppShellState extends State<AppShell> {
           ],
         ),
       ),
-    );
-  }
-}
-
-// Placeholder pages - will be replaced with actual implementations
-
-class _SearchPage extends StatelessWidget {
-  const _SearchPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Search Page - To be implemented')),
-    );
-  }
-}
-
-
-class _AccountPage extends StatelessWidget {
-  const _AccountPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Account Page - To be implemented')),
     );
   }
 }

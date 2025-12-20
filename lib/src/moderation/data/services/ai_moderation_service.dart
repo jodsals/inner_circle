@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/services/secure_storage_service.dart';
 import '../models/moderation_result_model.dart';
 
 /// Service for AI-based content moderation using Ollama
@@ -9,12 +10,15 @@ class AIModerationService {
   final String baseUrl;
   final String model;
   final http.Client httpClient;
+  final SecureStorageService _secureStorage;
 
   AIModerationService({
-    this.baseUrl = 'http://host.docker.internal:11434',
+    this.baseUrl = 'http://3.74.164.83:3000', // Deine Server-URL
     this.model = 'llama3.2',
+    required SecureStorageService secureStorage,
     http.Client? httpClient,
-  }) : httpClient = httpClient ?? http.Client();
+  })  : httpClient = httpClient ?? http.Client(),
+        _secureStorage = secureStorage;
 
   /// Analyze content for harmful speech
   /// Returns a ModerationResult with flags and confidence score
@@ -87,21 +91,25 @@ WICHTIG:
   /// Call Ollama API with the prompt
   Future<String> _callOllama(String prompt) async {
     try {
-      final url = Uri.parse('$baseUrl/api/chat');
+      final url = Uri.parse('$baseUrl/api/generate');
+
+      // ============================================================
+      // HIER WIRD DER JWT_TOKEN ABGERUFEN UND VERWENDET
+      // ============================================================
+      final token = await _secureStorage.read(key: 'ollama_bearer_token');
+
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token', // ← BEARER TOKEN
+      };
 
       final response = await httpClient.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
-          'model': model, // "gpt-oss"
-          'messages': [
-            {
-              'role': 'user',
-              'content': prompt,
-            }
-          ],
+          'model': model,
+          'prompt': prompt, // Angepasst für /api/generate endpoint
           'stream': false,
-          'temperature': 0.1,
         }),
       );
 
@@ -115,8 +123,8 @@ WICHTIG:
 
       final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
 
-      final message = jsonResponse['message'] as Map<String, dynamic>?;
-      final content = message?['content'] as String?;
+      // Für /api/generate endpoint ist die Antwort in 'response' field
+      final content = jsonResponse['response'] as String?;
 
       if (content == null || content.isEmpty) {
         throw ServerException('Empty response from Ollama');

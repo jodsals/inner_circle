@@ -4,7 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../network/network_info.dart';
-
+import '../services/secure_storage_service.dart';
 // ============================================================================
 // Firebase Providers
 // ============================================================================
@@ -31,4 +31,9 @@ final firebaseStorageProvider = Provider<FirebaseStorage>((ref) {
 /// Network info provider
 final networkInfoProvider = Provider<NetworkInfo>((ref) {
   return NetworkInfoImpl();
+});
+
+/// Secure storage service provider
+final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
+  return SecureStorageService();
 });

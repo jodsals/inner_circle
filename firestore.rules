@@ -75,7 +75,14 @@ service cloud.firestore {
                          .hasAny(['id', 'email', 'role']) &&
                        // Validate displayName if changed
                        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName']) ||
-                        isValidString(request.resource.data.displayName, 1, 50));
+                        isValidString(request.resource.data.displayName, 1, 50)) &&
+                       // Validate photoUrl if changed (allow any string or null)
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['photoUrl']) ||
+                        request.resource.data.photoUrl is string ||
+                        request.resource.data.photoUrl == null) &&
+                       // Allow lastLogin timestamp updates
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastLogin']) ||
+                        request.resource.data.lastLogin is timestamp);
 
       // Admins can update any user (including role changes)
       allow update: if isAdmin() &&
@@ -83,8 +90,8 @@ service cloud.firestore {
                        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
                         request.resource.data.role in ['user', 'moderator', 'admin']);
 
-      // Only admins can delete users
-      allow delete: if isAdmin();
+      // Users can delete their own account, admins can delete any user
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // ============================================

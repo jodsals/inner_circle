@@ -82,6 +82,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     await authController.registerWithEmail(
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      displayName: _displayNameController.text.trim(),
     );
 
     // Check if widget is still mounted after async operation
@@ -91,9 +92,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     final authState = ref.read(authControllerProvider);
     if (authState.user != null) {
       // Save health profile with selected conditions
-      // Navigate to survey page after successful registration
+      // Navigate to app after successful registration
       if (mounted) {
-        context.go('/home');
+        context.go('/app');
       }
     }
   }

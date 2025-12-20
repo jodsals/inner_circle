@@ -16,6 +16,7 @@ class RegisterWithEmailUseCase {
   Future<Either<Failure, User>> execute({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     // Validate email
     final emailError = Validators.validateEmail(email);
@@ -33,6 +34,7 @@ class RegisterWithEmailUseCase {
     return await _repository.registerWithEmail(
       email: email.trim(),
       password: password,
+      displayName: displayName?.trim(),
     );
   }
 }

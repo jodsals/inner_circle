@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/di/providers.dart';
 import '../../data/datasources/comment_remote_datasource.dart';
 import '../../data/repositories/comment_repository_impl.dart';
 import '../../domain/usecases/create_comment.dart';
@@ -18,7 +19,11 @@ export 'comment_providers.dart' show CommentParams;
 // ============================================
 
 final commentRemoteDataSourceProvider = Provider<CommentRemoteDataSource>((ref) {
-  return FirebaseCommentRemoteDataSource(FirebaseFirestore.instance);
+  final encryptionService = ref.watch(encryptionServiceProvider);
+  return FirebaseCommentRemoteDataSource(
+    FirebaseFirestore.instance,
+    encryptionService,
+  );
 });
 
 // ============================================

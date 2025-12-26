@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/di/providers.dart';
 import '../../data/datasources/post_remote_datasource.dart';
 import '../../data/repositories/post_repository_impl.dart';
 import '../../domain/usecases/create_post.dart';
@@ -16,7 +17,11 @@ import 'post_controller.dart';
 // ============================================
 
 final postRemoteDataSourceProvider = Provider<PostRemoteDataSource>((ref) {
-  return FirebasePostRemoteDataSource(FirebaseFirestore.instance);
+  final encryptionService = ref.watch(encryptionServiceProvider);
+  return FirebasePostRemoteDataSource(
+    FirebaseFirestore.instance,
+    encryptionService,
+  );
 });
 
 // ============================================

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/services/encryption_service.dart';
 import '../models/post_model.dart';
 
 /// Abstract remote data source for posts
@@ -31,11 +32,12 @@ abstract class PostRemoteDataSource {
       String communityId, String forumId, String postId);
 }
 
-/// Implementation of post remote data source
+/// Implementation of post remote data source with encryption
 class FirebasePostRemoteDataSource implements PostRemoteDataSource {
   final FirebaseFirestore firestore;
+  final EncryptionService encryptionService;
 
-  FirebasePostRemoteDataSource(this.firestore);
+  FirebasePostRemoteDataSource(this.firestore, this.encryptionService);
 
   CollectionReference _postsCollection(String communityId, String forumId) =>
       firestore
@@ -45,6 +47,35 @@ class FirebasePostRemoteDataSource implements PostRemoteDataSource {
           .doc(forumId)
           .collection('posts');
 
+  /// Helper method to create PostModel with decrypted data
+  PostModel _createDecryptedPost(
+    DocumentSnapshot doc,
+    String communityId,
+    String forumId,
+  ) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    // Decrypt title and content
+    final encryptedTitle = data['title'] as String;
+    final encryptedContent = data['content'] as String;
+
+    return PostModel(
+      id: doc.id,
+      communityId: communityId,
+      forumId: forumId,
+      authorId: data['authorId'] as String,
+      authorName: data['authorName'] as String,
+      authorPhotoUrl: data['authorPhotoUrl'] as String?,
+      title: encryptionService.decryptString(encryptedTitle),
+      content: encryptionService.decryptString(encryptedContent),
+      likesCount: (data['likesCount'] as num?)?.toInt() ?? 0,
+      commentsCount: (data['commentsCount'] as num?)?.toInt() ?? 0,
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      isEdited: data['isEdited'] as bool? ?? false,
+    );
+  }
+
   @override
   Future<List<PostModel>> getPosts(String communityId, String forumId) async {
     try {
@@ -53,7 +84,7 @@ class FirebasePostRemoteDataSource implements PostRemoteDataSource {
           .get();
 
       return snapshot.docs
-          .map((doc) => PostModel.fromFirestore(doc, communityId, forumId))
+          .map((doc) => _createDecryptedPost(doc, communityId, forumId))
           .toList();
     } on FirebaseException catch (e) {
       throw ServerException('Failed to get posts: ${e.message}');
@@ -73,7 +104,7 @@ class FirebasePostRemoteDataSource implements PostRemoteDataSource {
         throw const NotFoundException('Post not found');
       }
 
-      return PostModel.fromFirestore(doc, communityId, forumId);
+      return _createDecryptedPost(doc, communityId, forumId);
     } on NotFoundException {
       rethrow;
     } on FirebaseException catch (e) {
@@ -94,13 +125,17 @@ class FirebasePostRemoteDataSource implements PostRemoteDataSource {
     required String content,
   }) async {
     try {
-      // Create post document
+      // Encrypt sensitive data
+      final encryptedTitle = encryptionService.encryptString(title);
+      final encryptedContent = encryptionService.encryptString(content);
+
+      // Create post document with encrypted data
       final docRef = await _postsCollection(communityId, forumId).add({
         'authorId': authorId,
         'authorName': authorName,
         'authorPhotoUrl': authorPhotoUrl,
-        'title': title,
-        'content': content,
+        'title': encryptedTitle,
+        'content': encryptedContent,
         'likesCount': 0,
         'commentsCount': 0,
         'createdAt': FieldValue.serverTimestamp(),
@@ -108,9 +143,9 @@ class FirebasePostRemoteDataSource implements PostRemoteDataSource {
         'isEdited': false,
       });
 
-      // Get the created document
+      // Get the created document and decrypt
       final doc = await docRef.get();
-      return PostModel.fromFirestore(doc, communityId, forumId);
+      return _createDecryptedPost(doc, communityId, forumId);
     } on FirebaseException catch (e) {
       throw ServerException('Failed to create post: ${e.message}');
     } catch (e) {
@@ -132,15 +167,20 @@ class FirebasePostRemoteDataSource implements PostRemoteDataSource {
         'isEdited': true,
       };
 
-      if (title != null) updateData['title'] = title;
-      if (content != null) updateData['content'] = content;
+      // Encrypt data before updating
+      if (title != null) {
+        updateData['title'] = encryptionService.encryptString(title);
+      }
+      if (content != null) {
+        updateData['content'] = encryptionService.encryptString(content);
+      }
 
       await _postsCollection(communityId, forumId).doc(postId).update(updateData);
 
-      // Get the updated document
+      // Get the updated document and decrypt
       final doc =
           await _postsCollection(communityId, forumId).doc(postId).get();
-      return PostModel.fromFirestore(doc, communityId, forumId);
+      return _createDecryptedPost(doc, communityId, forumId);
     } on FirebaseException catch (e) {
       throw ServerException('Failed to update post: ${e.message}');
     } catch (e) {
@@ -179,7 +219,7 @@ class FirebasePostRemoteDataSource implements PostRemoteDataSource {
           .snapshots()
           .map((snapshot) {
         return snapshot.docs
-            .map((doc) => PostModel.fromFirestore(doc, communityId, forumId))
+            .map((doc) => _createDecryptedPost(doc, communityId, forumId))
             .toList();
       });
     } catch (e) {

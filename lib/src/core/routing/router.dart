@@ -173,7 +173,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'forums/:forumId',
                 name: 'forum-posts',
                 builder: (context, state) {
-                  final extra = state.extra as Map<String, dynamic>;
+                  final communityId = state.pathParameters['communityId']!;
+                  final forumId = state.pathParameters['forumId']!;
+                  final extra = state.extra as Map<String, dynamic>?;
+
+                  // If extra is null (e.g., page refresh), return error or loader
+                  if (extra == null) {
+                    return Scaffold(
+                      appBar: AppBar(title: const Text('Forum')),
+                      body: const Center(
+                        child: Text('Please navigate from the community page'),
+                      ),
+                    );
+                  }
+
                   return ForumPostsPage(
                     community: extra['community'] as Community,
                     forum: extra['forum'] as Forum,
@@ -185,7 +198,18 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'posts/create',
                     name: 'create-post',
                     builder: (context, state) {
-                      final extra = state.extra as Map<String, dynamic>;
+                      final extra = state.extra as Map<String, dynamic>?;
+
+                      // If extra is null (e.g., page refresh), return error or loader
+                      if (extra == null) {
+                        return Scaffold(
+                          appBar: AppBar(title: const Text('Create Post')),
+                          body: const Center(
+                            child: Text('Please navigate from the forum page'),
+                          ),
+                        );
+                      }
+
                       return CreatePostPage(
                         community: extra['community'] as Community,
                         forum: extra['forum'] as Forum,

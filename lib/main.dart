@@ -18,6 +18,14 @@ void main() async {
   final container = ProviderContainer();
   final secureStorage = container.read(secureStorageServiceProvider);
 
+  // JWT aus Environment Variable laden
+  const jwtToken = String.fromEnvironment('OLLAMA_JWT_TOKEN', defaultValue: '');
+
+  // Nur speichern wenn Token vorhanden ist
+  if (jwtToken.isNotEmpty) {
+    await secureStorage.write(key: 'ollama_bearer_token', value: jwtToken);
+  }
+
   // runApp mit ProviderScope, den Container überschreiben
   runApp(
     const ProviderScope(

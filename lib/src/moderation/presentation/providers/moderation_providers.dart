@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
+import '../../../comment/presentation/providers/comment_providers.dart';
 import '../../../post/presentation/providers/post_providers.dart';
 import '../../data/datasources/review_remote_datasource.dart';
 import '../../data/models/review_request_model.dart';
@@ -45,6 +46,8 @@ final createReviewRequestProvider = Provider((ref) {
     required String userId,
     required String content,
     required String contentType,
+    String? contentId,
+    String? postId,
     String? communityId,
     String? forumId,
     String? title,
@@ -59,6 +62,8 @@ final createReviewRequestProvider = Provider((ref) {
         userId: userId,
         content: content,
         contentType: contentType,
+        contentId: contentId,
+        postId: postId,
         communityId: communityId,
         forumId: forumId,
         title: title,
@@ -123,14 +128,48 @@ final approveReviewProvider = Provider((ref) {
   };
 });
 
-/// Provider for rejecting review requests
+/// Provider for rejecting review requests and deleting the content
 final rejectReviewProvider = Provider((ref) {
   final dataSource = ref.watch(reviewRemoteDataSourceProvider);
+  final postController = ref.watch(postControllerProvider.notifier);
+  final commentController = ref.watch(commentControllerProvider.notifier);
+  final postDataSource = ref.watch(postRemoteDataSourceProvider);
+
   return ({
     required String reviewId,
     required String adminId,
     String? reviewNotes,
   }) async {
+    // Step 1: Get the review request to extract content data
+    final review = await dataSource.getReviewRequest(reviewId);
+
+    // Step 2: Delete the actual content (post or comment) if contentId exists
+    if (review.contentId != null) {
+      if (review.contentType == 'post' &&
+          review.communityId != null &&
+          review.forumId != null) {
+        // Delete the post
+        await postController.deleteExistingPost(
+          review.communityId!,
+          review.forumId!,
+          review.contentId!,
+        );
+      } else if (review.contentType == 'comment' &&
+          review.communityId != null &&
+          review.forumId != null &&
+          review.postId != null) {
+        // Delete the comment
+        await commentController.deleteExistingComment(
+          communityId: review.communityId!,
+          forumId: review.forumId!,
+          postId: review.postId!,
+          commentId: review.contentId!,
+          postDataSource: postDataSource,
+        );
+      }
+    }
+
+    // Step 3: Reject/Delete the review request
     await dataSource.rejectReview(
       reviewId,
       adminId,

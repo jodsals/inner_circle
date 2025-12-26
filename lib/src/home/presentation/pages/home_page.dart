@@ -6,6 +6,8 @@ import '../../../community/domain/entities/community.dart';
 import '../../../community/presentation/providers/community_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/feed_card.dart';
+import '../../../forum/domain/entities/forum.dart';
+import '../../../moderation/presentation/providers/moderation_providers.dart';
 import '../../../post/domain/entities/post.dart';
 import '../providers/home_providers.dart';
 
@@ -178,26 +180,90 @@ class _HomePageState extends ConsumerState<HomePage>
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final postData = posts[index];
+              final post = postData['post'] as Post;
+              final community = postData['community'] as Community;
+              final forum = postData['forum'] as Forum;
+
               return FeedCard(
-                post: postData['post'] as Post,
+                post: post,
                 communityName: postData['communityName'] as String,
                 forumName: postData['forumName'] as String,
                 onTap: () {
                   // Navigate to post detail
                   context.push(
-                    '/communities/${postData['communityId']}/forums/${postData['forumId']}/posts/${(postData['post'] as Post).id}',
+                    '/communities/${postData['communityId']}/forums/${postData['forumId']}/posts/${post.id}',
                     extra: {
-                      'community': postData['community'],
-                      'forum': postData['forum'],
-                      'post': postData['post'],
+                      'community': community,
+                      'forum': forum,
+                      'post': post,
                     },
                   );
                 },
                 onLike: () {
                   // TODO: Implement like functionality
                 },
-                onReport: () {
-                  // TODO: Implement report functionality
+                onReport: () async {
+                  // Show confirmation dialog
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Beitrag melden'),
+                      content: const Text(
+                        'Möchten Sie diesen Beitrag melden? Ein Administrator wird ihn überprüfen.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Abbrechen'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Melden'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true && context.mounted) {
+                    try {
+                      final createReview = ref.read(createReviewRequestProvider);
+                      await createReview(
+                        userId: post.authorId,
+                        content: post.content,
+                        contentType: 'post',
+                        contentId: post.id,
+                        communityId: community.id,
+                        forumId: forum.id,
+                        title: post.title,
+                        authorName: post.authorName,
+                        authorPhotoUrl: post.authorPhotoUrl,
+                        flagReasons: ['userReport'],
+                        confidenceScore: 1.0,
+                      );
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Beitrag wurde gemeldet'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Fehler beim Melden: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  }
                 },
               );
             },

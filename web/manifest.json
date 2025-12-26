@@ -1,11 +1,11 @@
 {
-    "name": "inner_circle",
-    "short_name": "inner_circle",
+    "name": "Inner Circle",
+    "short_name": "Inner Circle",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
+    "background_color": "#FFFFFF",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Peer-support app for chronic illness communities",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

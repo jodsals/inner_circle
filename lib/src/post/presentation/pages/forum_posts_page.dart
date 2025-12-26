@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../community/domain/entities/community.dart';
 import '../../../forum/domain/entities/forum.dart';
+import '../../../moderation/presentation/providers/moderation_providers.dart';
 import '../../domain/entities/post.dart';
 import '../providers/post_providers.dart';
 
@@ -88,6 +89,8 @@ class ForumPostsPage extends ConsumerWidget {
               final post = posts[index] as Post;
               return PostCard(
                 post: post,
+                community: community,
+                forum: forum,
                 onTap: () {
                   context.push(
                     '/communities/${community.id}/forums/${forum.id}/posts/${post.id}',
@@ -159,18 +162,22 @@ class ForumPostsPage extends ConsumerWidget {
 }
 
 /// Card widget for displaying a post
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerWidget {
   final Post post;
+  final Community community;
+  final Forum forum;
   final VoidCallback onTap;
 
   const PostCard({
     super.key,
     required this.post,
+    required this.community,
+    required this.forum,
     required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -179,12 +186,97 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
-            Text(
-              post.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+            // Title with more menu
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    post.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
+                ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, size: 20, color: Colors.grey[600]),
+                  onSelected: (value) async {
+                    if (value == 'report') {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Beitrag melden'),
+                          content: const Text(
+                            'Möchten Sie diesen Beitrag melden? Ein Administrator wird ihn überprüfen.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Abbrechen'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Melden'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true && context.mounted) {
+                        try {
+                          final createReview = ref.read(createReviewRequestProvider);
+                          await createReview(
+                            userId: post.authorId,
+                            content: post.content,
+                            contentType: 'post',
+                            contentId: post.id,
+                            communityId: community.id,
+                            forumId: forum.id,
+                            title: post.title,
+                            authorName: post.authorName,
+                            authorPhotoUrl: post.authorPhotoUrl,
+                            flagReasons: ['userReport'],
+                            confidenceScore: 1.0, // Manual report = 100% confidence
+                          );
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Beitrag wurde gemeldet'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Fehler beim Melden: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(Icons.flag, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Melden'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             const SizedBox(height: 8),
 

@@ -10,6 +10,7 @@ class Comment extends Equatable {
   final String authorName;
   final String? authorPhotoUrl;
   final String content;
+  final String? parentId; // ID of the parent comment if this is a reply
   final DateTime createdAt;
   final DateTime? updatedAt;
   final bool isEdited;
@@ -23,6 +24,7 @@ class Comment extends Equatable {
     required this.authorName,
     this.authorPhotoUrl,
     required this.content,
+    this.parentId,
     required this.createdAt,
     this.updatedAt,
     this.isEdited = false,
@@ -38,6 +40,7 @@ class Comment extends Equatable {
     String? authorName,
     String? authorPhotoUrl,
     String? content,
+    String? parentId,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isEdited,
@@ -51,6 +54,7 @@ class Comment extends Equatable {
       authorName: authorName ?? this.authorName,
       authorPhotoUrl: authorPhotoUrl ?? this.authorPhotoUrl,
       content: content ?? this.content,
+      parentId: parentId ?? this.parentId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isEdited: isEdited ?? this.isEdited,
@@ -67,6 +71,7 @@ class Comment extends Equatable {
         authorName,
         authorPhotoUrl,
         content,
+        parentId,
         createdAt,
         updatedAt,
         isEdited,

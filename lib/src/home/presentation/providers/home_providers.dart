@@ -4,22 +4,26 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../community/presentation/providers/community_providers.dart';
 import '../../../forum/presentation/providers/forum_providers.dart';
 import '../../../membership/presentation/providers/membership_providers.dart';
+import '../../../post/domain/entities/post.dart';
 import '../../../post/presentation/providers/post_providers.dart';
 
 /// Provider for all posts from communities user is member of (for My Feed)
-final allPostsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+/// Auto-reloads when user logs in or when invalidated
+final allPostsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final user = ref.watch(currentUserProvider);
 
   if (user == null) return [];
 
-  // Get user's community memberships
-  final userCommunitiesStream = ref.watch(userCommunitiesStreamProvider(user.id));
+  // Watch user's community memberships - this will rebuild when memberships change
+  final userCommunitiesAsync = ref.watch(userCommunitiesStreamProvider(user.id));
 
-  return userCommunitiesStream.when(
+  return await userCommunitiesAsync.when(
     data: (communityIds) async {
       if (communityIds.isEmpty) return [];
 
       final List<Map<String, dynamic>> allPosts = [];
+
+      // Get all communities
       final communitiesAsync = await ref.watch(communitiesStreamProvider.future);
 
       await communitiesAsync.fold(
@@ -36,8 +40,8 @@ final allPostsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async 
               watchForumsProvider(community.id).future,
             );
 
-            forumsEither.fold(
-              (failure) {
+            await forumsEither.fold(
+              (failure) async {
                 // Skip this community on error
               },
               (forums) async {
@@ -49,7 +53,7 @@ final allPostsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async 
 
                   for (final post in postsAsync) {
                     allPosts.add({
-                      'post': post,
+                      'post': post as Post,
                       'community': community,
                       'communityId': community.id,
                       'communityName': community.title,
@@ -67,8 +71,8 @@ final allPostsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async 
 
       // Sort by creation date (newest first)
       allPosts.sort((a, b) {
-        final aDate = (a['post'] as dynamic).createdAt as DateTime;
-        final bDate = (b['post'] as dynamic).createdAt as DateTime;
+        final aDate = (a['post'] as Post).createdAt;
+        final bDate = (b['post'] as Post).createdAt;
         return bDate.compareTo(aDate);
       });
 

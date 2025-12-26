@@ -93,12 +93,8 @@ class FirebaseReviewRemoteDataSource implements ReviewRemoteDataSource {
     String? notes,
   ) async {
     try {
-      await _reviewsCollection.doc(id).update({
-        'status': 'approved',
-        'reviewedAt': FieldValue.serverTimestamp(),
-        'reviewedBy': reviewedBy,
-        'reviewNotes': notes,
-      });
+      // Delete the review request after approval
+      await _reviewsCollection.doc(id).delete();
     } on FirebaseException catch (e) {
       throw ServerException('Failed to approve review: ${e.message}');
     } catch (e) {
@@ -113,12 +109,8 @@ class FirebaseReviewRemoteDataSource implements ReviewRemoteDataSource {
     String? notes,
   ) async {
     try {
-      await _reviewsCollection.doc(id).update({
-        'status': 'rejected',
-        'reviewedAt': FieldValue.serverTimestamp(),
-        'reviewedBy': reviewedBy,
-        'reviewNotes': notes,
-      });
+      // Delete the review request after rejection
+      await _reviewsCollection.doc(id).delete();
     } on FirebaseException catch (e) {
       throw ServerException('Failed to reject review: ${e.message}');
     } catch (e) {

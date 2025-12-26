@@ -21,6 +21,9 @@ import '../../post/presentation/pages/post_detail_page.dart';
 import '../../post/presentation/pages/post_detail_loader.dart';
 import '../../post/presentation/pages/create_post_page.dart';
 import '../../search/presentation/pages/search_page.dart';
+import '../../survey/domain/entities/survey_response.dart';
+import '../../survey/presentation/pages/survey_intro_page.dart';
+import '../../survey/presentation/pages/survey_page.dart';
 
 /// Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -34,14 +37,26 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final user = ref.read(currentUserProvider);
       final isAuthPage = state.matchedLocation == '/auth';
+      final isSurveyPage = state.matchedLocation.startsWith('/survey');
 
       // Not logged in -> redirect to auth
       if (user == null) {
         return isAuthPage ? null : '/auth';
       }
 
-      // Logged in but on auth page -> redirect based on role
+      // Check if user needs to complete initial survey
+      if (!user.hasCompletedInitialSurvey && !isSurveyPage) {
+        // Redirect to survey intro page - survey page will load progress if available
+        return '/survey/intro/baseline';
+      }
+
+      // Logged in but on auth page -> redirect based on role/survey status
       if (isAuthPage) {
+        // If survey not completed, go to survey
+        if (!user.hasCompletedInitialSurvey) {
+          return '/survey/intro/baseline';
+        }
+        // Otherwise redirect based on role
         return user.role.isAdmin ? '/admin' : '/app';
       }
 
@@ -105,6 +120,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const AccountSettingsPage(),
+      ),
+
+      // Survey routes
+      GoRoute(
+        path: '/survey/intro/:type',
+        name: 'survey-intro',
+        builder: (context, state) {
+          final typeStr = state.pathParameters['type']!;
+          final surveyType = typeStr == 'baseline'
+              ? SurveyType.baseline
+              : SurveyType.followup;
+          return SurveyIntroPage(surveyType: surveyType);
+        },
+      ),
+      GoRoute(
+        path: '/survey/:type',
+        name: 'survey',
+        builder: (context, state) {
+          final typeStr = state.pathParameters['type']!;
+          final surveyType = typeStr == 'baseline'
+              ? SurveyType.baseline
+              : SurveyType.followup;
+          return SurveyPage(surveyType: surveyType);
+        },
       ),
 
       // Communities routes (user-facing)

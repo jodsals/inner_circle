@@ -18,6 +18,7 @@ class CreateComment {
     required String authorName,
     String? authorPhotoUrl,
     required String content,
+    String? parentId,
   }) {
     return repository.createComment(
       communityId: communityId,
@@ -27,6 +28,7 @@ class CreateComment {
       authorName: authorName,
       authorPhotoUrl: authorPhotoUrl,
       content: content,
+      parentId: parentId,
     );
   }
 }

@@ -44,3 +44,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Windows-specific files
+nul
+*.log~
+
+# Node modules (from temporary scripts)
+node_modules/
+package-lock.json

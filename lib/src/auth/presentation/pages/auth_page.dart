@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../widgets/animated_logo.dart';
+import '../widgets/animated_text.dart';
 import '../widgets/login_form.dart';
 import '../widgets/register_form.dart';
 
@@ -13,8 +16,46 @@ class AuthPage extends ConsumerStatefulWidget {
   ConsumerState<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthPageState extends ConsumerState<AuthPage> {
+class _AuthPageState extends ConsumerState<AuthPage>
+    with SingleTickerProviderStateMixin {
   bool _isLogin = true;
+  late AnimationController _shineController;
+  late Animation<double> _shineAnimation;
+  Timer? _periodicTimer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Shine animation controller
+    _shineController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+
+    // Shine animation moves from -1 to 2 (left to right)
+    _shineAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shineController, curve: Curves.easeInOut),
+    );
+
+    // Start periodic shine animation every 8 seconds
+    _startPeriodicShine();
+  }
+
+  void _startPeriodicShine() {
+    _periodicTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (mounted) {
+        _shineController.forward(from: 0.0);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _periodicTimer?.cancel();
+    _shineController.dispose();
+    super.dispose();
+  }
 
   void _toggleAuthMode() {
     setState(() {
@@ -38,29 +79,24 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App Logo with background
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.favorite,
-                      size: 60,
-                      color: Colors.white,
+                  // App Logo with shine animation
+                  Center(
+                    child: AnimatedLogo(
+                      height: 120,
+                      assetPath: 'assets/app_logo/inner_circle_logo_highlighted.svg',
+                      shineAnimation: _shineAnimation,
                     ),
                   ),
                   const SizedBox(height: 32),
 
-                  // Welcome text
-                  Text(
-                    'InnerCircle',
+                  // Welcome text with shine animation
+                  AnimatedShineText(
+                    text: 'InnerCircle',
+                    shineAnimation: _shineAnimation,
                     style: theme.textTheme.headlineLarge?.copyWith(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
 

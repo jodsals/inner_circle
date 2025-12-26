@@ -332,13 +332,13 @@ service cloud.firestore {
     }
 
     // ============================================
-    // SURVEY RESPONSES COLLECTION (für zukünftige Implementierung)
+    // SURVEY RESPONSES COLLECTION
     // ============================================
 
-    match /surveyResponses/{responseId} {
-      // Users can only read their own survey responses
+    match /survey_responses/{responseId} {
+      // Users can read their own survey responses, admins can read all
       allow read: if isAuthenticated() &&
-                     resource.data.userId == request.auth.uid;
+                     (resource.data.userId == request.auth.uid || isAdmin());
 
       // Users can create their own survey responses
       allow create: if isAuthenticated() &&
@@ -346,6 +346,38 @@ service cloud.firestore {
 
       // Users cannot update or delete survey responses (immutable)
       allow update, delete: if false;
+    }
+
+    // ============================================
+    // SURVEY SCHEDULES COLLECTION
+    // ============================================
+
+    match /survey_schedules/{scheduleId} {
+      // Users can read their own survey schedules, admins can read all
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+
+      // System can create/update survey schedules (authenticated users)
+      allow create, update: if isAuthenticated() &&
+                               request.resource.data.userId == request.auth.uid;
+
+      // Users cannot delete survey schedules
+      allow delete: if false;
+    }
+
+    // ============================================
+    // SURVEY PROGRESS COLLECTION
+    // ============================================
+
+    match /survey_progress/{progressId} {
+      // Users can read their own survey progress
+      allow read: if isAuthenticated();
+
+      // Users can create/update their own survey progress
+      allow create, update: if isAuthenticated();
+
+      // Users can delete their own survey progress
+      allow delete: if isAuthenticated();
     }
   }
 }

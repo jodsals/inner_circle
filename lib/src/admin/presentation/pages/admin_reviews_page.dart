@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -17,17 +18,96 @@ class AdminReviewsPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inhalte überprüfen'),
+        title: Row(
+          children: [
+            const Icon(Icons.flag),
+            const SizedBox(width: 12),
+            const Text('Inhalte überprüfen'),
+          ],
+        ),
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              ref.read(authControllerProvider.notifier).logout();
-            },
-            icon: const Icon(Icons.logout, color: Colors.white),
-            label: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.white),
+          // User info chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person, size: 18, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  currentUser?.email?.split('@')[0] ?? 'Admin',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Logout button
+          IconButton(
+            onPressed: () async {
+              // Get the controller before any async operations
+              final authController = ref.read(authControllerProvider.notifier);
+
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Ausloggen'),
+                  content: const Text('Möchten Sie sich wirklich ausloggen?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Abbrechen'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Ausloggen'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true && context.mounted) {
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Ausloggen...'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+
+                await authController.logout();
+
+                if (context.mounted) {
+                  context.go('/auth');
+                }
+              }
+            },
+            icon: const Icon(Icons.logout),
+            tooltip: 'Ausloggen',
           ),
           const SizedBox(width: 8),
         ],
@@ -295,6 +375,8 @@ class _ReviewCardState extends ConsumerState<_ReviewCard> {
         return 'Sexuelle Inhalte';
       case 'dangerousActivities':
         return 'Gefährliche Aktivitäten';
+      case 'userReport':
+        return 'Nutzer-Meldung';
       default:
         return reason;
     }

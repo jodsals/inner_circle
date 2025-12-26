@@ -51,6 +51,7 @@ class CommentRepositoryImpl implements CommentRepository {
     required String authorName,
     String? authorPhotoUrl,
     required String content,
+    String? parentId,
   }) async {
     try {
       final comment = await remoteDataSource.createComment(
@@ -61,6 +62,7 @@ class CommentRepositoryImpl implements CommentRepository {
         authorName: authorName,
         authorPhotoUrl: authorPhotoUrl,
         content: content,
+        parentId: parentId,
       );
       return Right(comment);
     } on ServerException catch (e) {

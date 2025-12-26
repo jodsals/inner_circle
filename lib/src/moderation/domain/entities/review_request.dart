@@ -6,6 +6,8 @@ class ReviewRequest extends Equatable {
   final String userId;
   final String content;
   final String contentType; // 'post' or 'comment'
+  final String? contentId; // ID of the post or comment being reviewed
+  final String? postId; // ID of the post (required for comments to enable deletion)
   final String? communityId;
   final String? forumId;
   final String? title; // Post title (only for contentType='post')
@@ -24,6 +26,8 @@ class ReviewRequest extends Equatable {
     required this.userId,
     required this.content,
     required this.contentType,
+    this.contentId,
+    this.postId,
     this.communityId,
     this.forumId,
     this.title,
@@ -52,6 +56,8 @@ class ReviewRequest extends Equatable {
     String? userId,
     String? content,
     String? contentType,
+    String? contentId,
+    String? postId,
     String? communityId,
     String? forumId,
     String? title,
@@ -70,6 +76,8 @@ class ReviewRequest extends Equatable {
       userId: userId ?? this.userId,
       content: content ?? this.content,
       contentType: contentType ?? this.contentType,
+      contentId: contentId ?? this.contentId,
+      postId: postId ?? this.postId,
       communityId: communityId ?? this.communityId,
       forumId: forumId ?? this.forumId,
       title: title ?? this.title,
@@ -91,6 +99,8 @@ class ReviewRequest extends Equatable {
         userId,
         content,
         contentType,
+        contentId,
+        postId,
         communityId,
         forumId,
         title,

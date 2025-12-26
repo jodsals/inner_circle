@@ -31,6 +31,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
+  bool _isSubmitting = false;
   List<String> _selectedConditionIds = [];
 
   @override
@@ -54,6 +55,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isSubmitting) return; // Prevent double submission
 
     // Validate chronic condition selection
     if (_selectedConditionIds.isEmpty) {
@@ -76,25 +78,37 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
       return;
     }
 
-    final authController = ref.read(authControllerProvider.notifier);
+    setState(() {
+      _isSubmitting = true;
+    });
 
-    // Register user
-    await authController.registerWithEmail(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      displayName: _displayNameController.text.trim(),
-    );
+    try {
+      final authController = ref.read(authControllerProvider.notifier);
 
-    // Check if widget is still mounted after async operation
-    if (!mounted) return;
+      // Register user
+      await authController.registerWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        displayName: _displayNameController.text.trim(),
+      );
 
-    // Check if registration was successful
-    final authState = ref.read(authControllerProvider);
-    if (authState.user != null) {
-      // Save health profile with selected conditions
-      // Navigate to app after successful registration
+      // Check if widget is still mounted after async operation
+      if (!mounted) return;
+
+      // Check if registration was successful
+      final authState = ref.read(authControllerProvider);
+      if (authState.user != null) {
+        // Save health profile with selected conditions
+        // Navigate to survey intro page after successful registration
+        if (mounted) {
+          context.go('/survey/intro/baseline');
+        }
+      }
+    } finally {
       if (mounted) {
-        context.go('/app');
+        setState(() {
+          _isSubmitting = false;
+        });
       }
     }
   }
@@ -145,7 +159,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: Icon(Icons.person_outline),
             ),
             validator: (value) => Validators.validateRequired(value, "Anzeigename"),
-            enabled: !authState.isLoading,
+            enabled: !_isSubmitting,
           ),
           const SizedBox(height: 20),
 
@@ -160,7 +174,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               prefixIcon: Icon(Icons.email_outlined),
             ),
             validator: Validators.validateEmail,
-            enabled: !authState.isLoading,
+            enabled: !_isSubmitting,
           ),
           const SizedBox(height: 20),
 
@@ -188,7 +202,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               ),
             ),
             validator: Validators.validatePassword,
-            enabled: !authState.isLoading,
+            enabled: !_isSubmitting,
           ),
           const SizedBox(height: 20),
 
@@ -218,7 +232,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
               ),
             ),
             validator: _validateConfirmPassword,
-            enabled: !authState.isLoading,
+            enabled: !_isSubmitting,
           ),
           const SizedBox(height: 24),
 
@@ -237,7 +251,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           // Terms and Conditions
           CheckboxListTile(
             value: _acceptTerms,
-            onChanged: authState.isLoading
+            onChanged: _isSubmitting
                 ? null
                 : (value) {
                     setState(() {
@@ -274,8 +288,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
           // Register Button
           ElevatedButton(
-            onPressed: authState.isLoading ? null : _handleRegister,
-            child: authState.isLoading
+            onPressed: _isSubmitting ? null : _handleRegister,
+            child: _isSubmitting
                 ? const SizedBox(
                     height: 20,
                     width: 20,
@@ -308,7 +322,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
           // Switch to Login
           OutlinedButton(
-            onPressed: authState.isLoading ? null : widget.onToggleMode,
+            onPressed: _isSubmitting ? null : widget.onToggleMode,
             child: const Text('Bereits registriert? Anmelden'),
           ),
         ],

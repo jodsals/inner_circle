@@ -17,6 +17,7 @@ abstract class CommentRemoteDataSource {
     required String authorName,
     String? authorPhotoUrl,
     required String content,
+    String? parentId,
   });
   Future<CommentModel> updateComment({
     required String communityId,
@@ -98,6 +99,7 @@ class FirebaseCommentRemoteDataSource implements CommentRemoteDataSource {
     required String authorName,
     String? authorPhotoUrl,
     required String content,
+    String? parentId,
   }) async {
     try {
       // Create comment document
@@ -107,6 +109,7 @@ class FirebaseCommentRemoteDataSource implements CommentRemoteDataSource {
         'authorName': authorName,
         'authorPhotoUrl': authorPhotoUrl,
         'content': content,
+        'parentId': parentId,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': null,
         'isEdited': false,

@@ -17,6 +17,7 @@ abstract class CommentRepository {
     required String authorName,
     String? authorPhotoUrl,
     required String content,
+    String? parentId,
   });
   Future<Either<Failure, Comment>> updateComment({
     required String communityId,

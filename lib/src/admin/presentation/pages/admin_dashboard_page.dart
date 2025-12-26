@@ -18,22 +18,101 @@ class AdminDashboardPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: Row(
+          children: [
+            const Icon(Icons.admin_panel_settings),
+            const SizedBox(width: 12),
+            const Text('Admin Dashboard'),
+          ],
+        ),
         actions: [
-          TextButton.icon(
-            onPressed: () {
-              ref.read(authControllerProvider.notifier).logout();
-            },
-            icon: const Icon(Icons.logout, color: Colors.white),
-            label: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.white),
+          // User info chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person, size: 18, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  user?.email?.split('@')[0] ?? 'Admin',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Logout button
+          IconButton(
+            onPressed: () async {
+              // Get the controller before any async operations
+              final authController = ref.read(authControllerProvider.notifier);
+
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Ausloggen'),
+                  content: const Text('Möchten Sie sich wirklich ausloggen?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Abbrechen'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Ausloggen'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true && context.mounted) {
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Ausloggen...'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+
+                await authController.logout();
+
+                if (context.mounted) {
+                  context.go('/auth');
+                }
+              }
+            },
+            icon: const Icon(Icons.logout),
+            tooltip: 'Ausloggen',
           ),
           const SizedBox(width: 8),
         ],
       ),
-      drawer: _AdminDrawer(),
+      drawer: _AdminDrawer(currentUser: user),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -130,9 +209,13 @@ class AdminDashboardPage extends ConsumerWidget {
 }
 
 /// Admin navigation drawer
-class _AdminDrawer extends StatelessWidget {
+class _AdminDrawer extends ConsumerWidget {
+  final dynamic currentUser;
+
+  const _AdminDrawer({this.currentUser});
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -141,18 +224,26 @@ class _AdminDrawer extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.admin_panel_settings, size: 48, color: Colors.white),
-                SizedBox(height: 8),
-                Text(
+                const Icon(Icons.admin_panel_settings, size: 48, color: Colors.white),
+                const SizedBox(height: 8),
+                const Text(
                   'Admin Panel',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  currentUser?.email ?? '',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -188,6 +279,69 @@ class _AdminDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               context.go('/admin/forums');
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              'Ausloggen',
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () async {
+              // Get the controller before any async operations
+              final authController = ref.read(authControllerProvider.notifier);
+
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Ausloggen'),
+                  content: const Text('Möchten Sie sich wirklich ausloggen?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Abbrechen'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Ausloggen'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true && context.mounted) {
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (loadingContext) => const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Ausloggen...'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+
+                await authController.logout();
+
+                if (context.mounted) {
+                  context.go('/auth');
+                }
+              }
             },
           ),
         ],

@@ -23,6 +23,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -33,12 +34,25 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isSubmitting) return; // Prevent double submission
 
-    final controller = ref.read(authControllerProvider.notifier);
-    await controller.loginWithEmail(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final controller = ref.read(authControllerProvider.notifier);
+      await controller.loginWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
@@ -88,7 +102,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               prefixIcon: Icon(Icons.email_outlined),
             ),
             validator: Validators.validateEmail,
-            enabled: !authState.isLoading,
+            enabled: !_isSubmitting,
           ),
           const SizedBox(height: 20),
 
@@ -117,7 +131,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               ),
             ),
             validator: Validators.validatePassword,
-            enabled: !authState.isLoading,
+            enabled: !_isSubmitting,
           ),
           const SizedBox(height: 12),
 
@@ -125,7 +139,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: authState.isLoading ? null : () {
+              onPressed: _isSubmitting ? null : () {
                 // TODO: Implement password reset
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -140,8 +154,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
           // Login Button
           ElevatedButton(
-            onPressed: authState.isLoading ? null : _handleLogin,
-            child: authState.isLoading
+            onPressed: _isSubmitting ? null : _handleLogin,
+            child: _isSubmitting
                 ? const SizedBox(
                     height: 20,
                     width: 20,
@@ -174,7 +188,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
           // Switch to Register
           OutlinedButton(
-            onPressed: authState.isLoading ? null : widget.onToggleMode,
+            onPressed: _isSubmitting ? null : widget.onToggleMode,
             child: const Text('Neues Konto erstellen'),
           ),
         ],

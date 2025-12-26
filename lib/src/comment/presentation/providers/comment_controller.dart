@@ -30,6 +30,7 @@ class CommentController extends StateNotifier<AsyncValue<void>> {
     required String authorName,
     String? authorPhotoUrl,
     required String content,
+    String? parentId,
     required PostRemoteDataSource postDataSource,
   }) async {
     state = const AsyncValue.loading();
@@ -42,6 +43,7 @@ class CommentController extends StateNotifier<AsyncValue<void>> {
       authorName: authorName,
       authorPhotoUrl: authorPhotoUrl,
       content: content,
+      parentId: parentId,
     );
 
     return result.fold(

@@ -52,3 +52,46 @@ nul
 # Node modules (from temporary scripts)
 node_modules/
 package-lock.json
+
+# Environment variables (sensitive data)
+.env
+.env.local
+.env.*.local
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# IDE - JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Secrets and credentials
+secrets/
+credentials/
+*.key
+*.pem
+*.p12
+
+# Deploy artifacts
+.gh-pages/

@@ -1,17 +1,17 @@
 # Inner Circle
 
-A peer-support Flutter application for chronic illness communities with AI-powered content moderation.
+Eine Peer-Support Flutter-Anwendung für chronisch Kranke mit KI-gestützter Content-Moderation.
 
 ## Features
 
-- **Community Management**: Create and join communities for different chronic illnesses
-- **Forum Discussions**: Topic-based forums within communities
-- **Scientific Papers**: Search, view and download research papers (PDF support)
-- **AI-Powered Moderation**: Automatic content moderation using Ollama/LLaMA
-- **User Authentication**: Firebase Authentication with role-based access (Admin/User)
-- **Survey System**: Baseline and follow-up surveys for research purposes
-- **Admin Dashboard**: Content review and community management
-- **Cross-Platform**: Web, Android, iOS, Windows, macOS support
+- **Community-Verwaltung**: Erstelle und trete Communities für verschiedene chronische Krankheiten bei
+- **Forum-Diskussionen**: Themenbasierte Foren innerhalb von Communities
+- **Wissenschaftliche Artikel**: Suche, betrachte und lade Forschungsarbeiten herunter (PDF-Support)
+- **KI-gestützte Moderation**: Automatische Content-Moderation über externe Ollama-API
+- **Benutzer-Authentifizierung**: Firebase Authentication mit rollenbasiertem Zugriff (Admin/User)
+- **Umfrage-System**: Baseline- und Follow-up-Umfragen für Forschungszwecke
+- **Admin-Dashboard**: Content-Review und Community-Verwaltung
+- **Plattformübergreifend**: Web, Android, iOS, Windows, macOS Support
 
 ## Tech Stack
 
@@ -19,26 +19,25 @@ A peer-support Flutter application for chronic illness communities with AI-power
 - **State Management**: Riverpod
 - **Routing**: go_router
 - **Backend**: Firebase (Firestore, Auth, Storage)
-- **AI/ML**: Ollama (LLaMA 3.2) for content moderation
+- **AI/ML**: Externe Ollama-API (LLaMA 3.2) für Content-Moderation
 - **Deployment**: GitHub Pages (Web)
 
-## Prerequisites
+## Voraussetzungen
 
-- Flutter SDK (3.x or higher)
+- Flutter SDK (3.x oder höher)
 - Firebase CLI
-- Docker Desktop (for Ollama)
 - Git
 
-## Getting Started
+## Installation
 
-### 1. Clone the Repository
+### 1. Repository klonen
 
 ```bash
 git clone https://github.com/jodsals/inner_circle.git
 cd inner_circle
 ```
 
-### 2. Install Dependencies
+### 2. Dependencies installieren
 
 ```bash
 flutter pub get
@@ -47,95 +46,61 @@ flutter pub get
 ### 3. Firebase Setup
 
 ```bash
-# Install Firebase CLI
+# Firebase CLI installieren
 npm install -g firebase-tools
 
-# Check installation
+# Installation prüfen
 firebase --version
 
-# Login to Firebase
+# Bei Firebase einloggen
 firebase login
 
-# Configure FlutterFire
+# FlutterFire konfigurieren
 flutterfire configure
 ```
 
-Select the project `innercircle2025` when prompted.
+Wähle das Projekt `innercircle2025` aus, wenn du dazu aufgefordert wirst.
 
-### 4. Ollama Setup (for AI Moderation)
+### 4. Ollama-API Konfiguration
 
-The app uses Ollama for AI-based content moderation. Follow these steps:
+Die App nutzt eine **externe Ollama-API** für die KI-basierte Content-Moderation.
 
-#### Install Docker
-
-- **Windows/Mac**: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- **Linux**: `sudo apt-get install docker.io`
-
-#### Start Ollama Container
-
-```bash
-# Download and start Ollama container
-docker run -d -p 11434:11434 --name ollama ollama/ollama
-
-# Verify container is running
-docker ps
-```
-
-#### Download Model
-
-```bash
-# Download llama3.2 model (used for moderation)
-docker exec -it ollama ollama pull llama3.2
-
-# Test the model (optional)
-docker exec -it ollama ollama run llama3.2 "Hello, how are you?"
-```
-
-#### Container Management
-
-```bash
-# Stop container
-docker stop ollama
-
-# Start container (after stopping)
-docker start ollama
-
-# Remove container (if needed)
-docker stop ollama
-docker rm ollama
-```
-
-**Note**: The app expects Ollama at `http://host.docker.internal:11434` (works automatically with Docker Desktop).
+**Wichtig**:
+- Die App verwendet einen JWT-Token für die Authentifizierung bei der Ollama-API
+- **Lokales Ollama wird NICHT unterstützt** - nur externe API mit JWT-Token
+- Der Token muss als Environment Variable konfiguriert werden (siehe nächster Abschnitt)
 
 ### 5. Environment Variables
 
-The app uses environment variables for sensitive configuration. For the Ollama JWT token:
+Die App verwendet Environment Variables für sensible Konfiguration:
 
-#### Local Development
+#### Lokale Entwicklung
 
 ```bash
-flutter run -d chrome --dart-define=OLLAMA_JWT_TOKEN=your_token_here
+flutter run -d chrome --dart-define=OLLAMA_JWT_TOKEN=dein_token_hier
 ```
 
 #### Production Build
 
 ```bash
-flutter build web --release --dart-define=OLLAMA_JWT_TOKEN=your_token_here
+flutter build web --release --dart-define=OLLAMA_JWT_TOKEN=dein_token_hier
 ```
 
-## Running the App
+**Wichtig**: Der JWT-Token sollte niemals im Quellcode stehen. Verwende immer `--dart-define`.
+
+## App starten
 
 ```bash
 # Clean build
 flutter clean
 
-# Get dependencies
+# Dependencies holen
 flutter pub get
 
-# Run on Chrome (with Ollama token)
-flutter run -d chrome --dart-define=OLLAMA_JWT_TOKEN=your_token_here
+# Auf Chrome starten (mit Ollama-Token)
+flutter run -d chrome --dart-define=OLLAMA_JWT_TOKEN=dein_token_hier
 
-# Run on other platforms
+# Auf anderen Plattformen
 flutter run -d windows
 flutter run -d android
 flutter run -d ios
@@ -143,148 +108,174 @@ flutter run -d ios
 
 ## Deployment
 
-### GitHub Pages
+### GitHub Pages (Manuell)
 
-The app is configured for automatic deployment to GitHub Pages.
+Die App kann manuell zu GitHub Pages deployed werden.
 
-#### Setup
+#### Schritt-für-Schritt
 
-1. **GitHub Secrets**: Add `OLLAMA_JWT_TOKEN` to Repository Secrets
-   - Go to: Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `OLLAMA_JWT_TOKEN`
-   - Value: Your JWT token
+**1. Environment Variable setzen** (Windows CMD):
 
-2. **GitHub Pages**: Enable GitHub Actions deployment
-   - Go to: Settings → Pages
-   - Source: Select "GitHub Actions"
-
-3. **Firebase Console**: Add authorized domain
-   - Go to: [Firebase Console](https://console.firebase.google.com/project/innercircle2025/authentication/settings)
-   - Authorized domains → Add domain: `jodsals.github.io`
-
-4. **Deploy**: Push to main branch or trigger manually
-   ```bash
-   git push origin main
-   ```
-   Or go to Actions tab and run "Deploy to GitHub Pages" workflow manually.
-
-5. **Access**: Visit [https://jodsals.github.io/inner_circle/](https://jodsals.github.io/inner_circle/)
-
-#### Firebase Storage CORS (if using Storage)
-
-```bash
-# Configure CORS for Storage
-gcloud storage buckets update gs://innercircle2025.firebasestorage.app --cors-file=cors.json
+```cmd
+set OLLAMA_JWT_TOKEN=dein_token_hier
 ```
+
+**2. Deploy-Script ausführen**:
+
+```cmd
+deploy-to-gh-pages.bat
+```
+
+Das Script:
+- Baut die Flutter Web App
+- Erstellt/aktualisiert den `gh-pages` Branch
+- Pusht die Build-Dateien zu GitHub
+
+**3. GitHub Pages aktivieren**:
+- Gehe zu: https://github.com/jodsals/inner_circle/settings/pages
+- Source: "Deploy from a branch"
+- Branch: "gh-pages" → "/ (root)"
+- Save
+
+**4. Fertig!**
+
+Die App ist dann verfügbar unter:
+**https://jodsals.github.io/inner_circle/**
 
 ### Alternative: Firebase Hosting
 
 ```bash
-# Install Firebase CLI
+# Firebase CLI installieren
 npm install -g firebase-tools
 
 # Login
 firebase login
 
 # Build
-flutter build web --release --dart-define=OLLAMA_JWT_TOKEN=your_token_here
+flutter build web --release --dart-define=OLLAMA_JWT_TOKEN=dein_token_hier
+
+# Hosting initialisieren (nur beim ersten Mal)
+firebase init hosting
+# - Public directory: build/web
+# - Single-page app: Yes
+# - GitHub deployment: No
 
 # Deploy
 firebase deploy --only hosting
 ```
 
-## Project Structure
+App dann verfügbar unter:
+- `https://innercircle2025.web.app`
+- `https://innercircle2025.firebaseapp.com`
+
+## Projekt-Struktur
 
 ```
 lib/
-├── main.dart                 # App entry point
-├── firebase_options.dart     # Firebase configuration
+├── main.dart                 # App-Einstiegspunkt
+├── firebase_options.dart     # Firebase-Konfiguration
 └── src/
-    ├── app.dart             # Main app widget
-    ├── admin/               # Admin dashboard & management
-    ├── auth/                # Authentication & user management
-    ├── community/           # Community features
-    ├── forum/               # Forum discussions
-    ├── post/                # Posts & comments
-    ├── search/              # Search functionality
-    ├── survey/              # Survey system
+    ├── app.dart             # Haupt-App-Widget
+    ├── admin/               # Admin-Dashboard & Verwaltung
+    ├── auth/                # Authentifizierung & Benutzerverwaltung
+    ├── community/           # Community-Features
+    ├── forum/               # Forum-Diskussionen
+    ├── post/                # Posts & Kommentare
+    ├── search/              # Suchfunktion
+    ├── survey/              # Umfrage-System
     └── core/
-        ├── di/              # Dependency injection
-        ├── routing/         # Navigation & routing
-        └── presentation/    # Shared UI components
+        ├── di/              # Dependency Injection
+        ├── routing/         # Navigation & Routing
+        └── presentation/    # Geteilte UI-Komponenten
 ```
 
-## Firebase Configuration
+## Firebase-Konfiguration
 
 ### Firestore Collections
 
-- `users` - User profiles and settings
-- `communities` - Community information
-- `forums` - Forum metadata
-- `posts` - Forum posts
-- `comments` - Post comments
-- `surveys` - Survey responses
-- `moderation_queue` - AI-flagged content for review
+- `users` - Benutzerprofile und Einstellungen
+- `communities` - Community-Informationen
+- `forums` - Forum-Metadaten
+- `posts` - Forum-Posts
+- `comments` - Post-Kommentare
+- `surveys` - Umfrage-Antworten
+- `moderation_queue` - KI-markierte Inhalte zur Überprüfung
 
 ### Security Rules
 
-Firestore and Storage rules are defined in:
+Firestore- und Storage-Regeln sind definiert in:
 - `firestore.rules`
 - `storage.rules`
 
+### Authorized Domains
+
+Für Web-Deployment müssen Domains in Firebase autorisiert werden:
+
+1. Gehe zu: [Firebase Console → Authentication → Settings](https://console.firebase.google.com/project/innercircle2025/authentication/settings)
+2. Unter "Authorized domains" hinzufügen:
+   - Für GitHub Pages: `jodsals.github.io`
+   - Für Firebase Hosting: `innercircle2025.web.app` (bereits vorhanden)
+
+### Storage CORS (falls verwendet)
+
+Falls Firebase Storage genutzt wird:
+
+```bash
+# CORS konfigurieren
+gcloud storage buckets update gs://innercircle2025.firebasestorage.app --cors-file=cors.json
+```
+
 ## Troubleshooting
 
-### Ollama Issues
+### Ollama-API-Probleme
 
 **Problem**: "Failed to call Ollama API"
-- Check if Docker Desktop is running
-- Verify container status: `docker ps`
-- Test API: `curl http://localhost:11434/api/chat -d '{"model": "llama3.2", "messages": [{"role": "user", "content": "Hi"}], "stream": false}'`
-
-**Problem**: "Model not found"
-- Download model: `docker exec -it ollama ollama pull llama3.2`
-
-**Problem**: Port already in use
-- Check port: `netstat -ano | findstr 11434` (Windows)
-- Use different port: `docker run -d -p 11435:11434 --name ollama ollama/ollama`
-
-### Firebase Issues
-
-**Problem**: "Firebase not initialized"
-- Run `flutterfire configure`
-- Ensure `firebase_options.dart` exists
-
-**Problem**: Authentication errors on web
-- Check if domain is authorized in Firebase Console
-- Verify `authDomain` in Firebase config
-
-### Deployment Issues
-
-**Problem**: GitHub Pages shows 404
-- Ensure GitHub Pages is enabled (Settings → Pages)
-- Check workflow ran successfully (Actions tab)
-- Verify `--base-href /inner_circle/` in build command
+- JWT-Token prüfen (gültig und nicht abgelaufen?)
+- API-Endpoint erreichbar?
+- Netzwerkverbindung prüfen
+- Token als Environment Variable korrekt gesetzt?
 
 **Problem**: "OLLAMA_JWT_TOKEN undefined"
-- Add secret in GitHub: Settings → Secrets → Actions
-- Ensure secret name matches workflow: `OLLAMA_JWT_TOKEN`
+- Environment Variable vor Build setzen: `set OLLAMA_JWT_TOKEN=dein_token`
+- Bei Deploy-Script: Token muss gesetzt sein vor Ausführung
 
-## Contributing
+### Firebase-Probleme
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+**Problem**: "Firebase not initialized"
+- Lösung: `flutterfire configure` ausführen
+- Sicherstellen, dass `firebase_options.dart` existiert
 
-## License
+**Problem**: Authentifizierungsfehler im Web
+- Prüfen, ob Domain in Firebase Console autorisiert ist
+- `authDomain` in Firebase-Config überprüfen
 
-This project is part of a research initiative for chronic illness support communities.
+### Deployment-Probleme
 
-## Contact
+**Problem**: GitHub Pages zeigt 404
+- GitHub Pages in Settings aktivieren
+- Branch auf "gh-pages" setzen
+- `--base-href /inner_circle/` im Build-Befehl prüfen
 
-For questions or support, please open an issue on GitHub.
+**Problem**: Deploy-Script schlägt fehl
+- Git-Status prüfen: Keine uncommitted changes
+- Schreibrechte für Repository prüfen
+- Token-Environment-Variable gesetzt?
+
+## Mitarbeit
+
+1. Repository forken
+2. Feature-Branch erstellen (`git checkout -b feature/neues-feature`)
+3. Änderungen committen (`git commit -m 'Neues Feature hinzugefügt'`)
+4. Branch pushen (`git push origin feature/neues-feature`)
+5. Pull Request öffnen
+
+## Lizenz
+
+Dieses Projekt ist Teil einer Forschungsinitiative für chronisch Kranke Support-Communities.
+
+## Kontakt
+
+Bei Fragen oder Support bitte ein Issue auf GitHub öffnen.
 
 ---
 
